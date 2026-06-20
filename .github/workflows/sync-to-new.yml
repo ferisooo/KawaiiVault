@@ -1,0 +1,20 @@
+name: Sync claude branches to new
+
+on:
+  push:
+    branches:
+      - 'claude/**'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync to new branch
+        # Use --force-with-lease so a concurrent push to `new` is not clobbered.
+        run: git push --force-with-lease origin HEAD:refs/heads/new

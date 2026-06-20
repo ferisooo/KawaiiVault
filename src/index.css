@@ -1,0 +1,2794 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&family=Exo+2:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Nunito+Sans:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════
+   CYBERVAULT — NEON THEME (single theme)
+   Black · Pink · Yellow — glowing neon, animated gradients
+   ═══════════════════════════════════════════════════════════ */
+
+@theme {
+  /* ── Neutral base — deep black with a violet/pink undertone ── */
+  --color-cyber-black: #07050a;
+  --color-cyber-dark: #0d0812;
+  --color-cyber-panel: #150e1c;
+  --color-cyber-surface: #1c1326;
+  --color-cyber-border: rgba(255, 45, 149, 0.22);
+  --color-cyber-muted: #9a6a92;
+  --color-cyber-text: #ffdcef;
+  --color-cyber-white: #fff4fb;
+
+  /* ── Primary accent — neon pink ── */
+  --color-neon-primary: #ff2d95;
+  --color-neon-bright: #ff63bf;
+  --color-neon-dim: rgba(255, 45, 149, 0.7);
+  --color-neon-dark: rgba(255, 45, 149, 0.4);
+  --color-neon-glow: rgba(255, 45, 149, 0.45);
+  --color-neon-subtle: rgba(255, 45, 149, 0.08);
+
+  /* ── Secondary accent — neon yellow ── */
+  --color-neon-yellow: #ffd400;
+  --color-neon-yellow-bright: #ffe34d;
+  --color-neon-yellow-glow: rgba(255, 212, 0, 0.45);
+
+  /* ── Status colors ── */
+  --color-status-success: #ffe34d;
+  --color-status-warning: #ffd400;
+  --color-status-danger: #ff2d95;
+  --color-status-star: #ffd400;
+
+  /* ── Typography ── */
+  --font-family-display: "Exo 2", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-family-body: "Inter", "Nunito Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-family-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+
+  /* ── Geometry / timing ── */
+  --theme-radius: 4px;
+  --theme-border-width: 1px;
+  --theme-glow-spread: 18px;
+  --theme-transition-speed: 0.25s;
+}
+
+/* ═══════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════ */
+
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-neon-dark) var(--color-cyber-dark);
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--color-cyber-dark); }
+  ::-webkit-scrollbar-thumb { background: var(--color-neon-dark); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-neon-primary); }
+
+  body {
+    font-family: var(--font-family-body);
+    background: var(--color-cyber-black);
+    color: var(--color-cyber-text);
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+    overflow: hidden;
+  }
+
+  ::selection {
+    background: var(--color-neon-primary);
+    color: white;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   CYBERPUNK ANIMATIONS (shared across themes)
+   ═══════════════════════════════════════════ */
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.8; }
+  94% { opacity: 1; }
+  96% { opacity: 0.9; }
+  97% { opacity: 1; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px var(--color-neon-glow), 0 0 10px var(--color-neon-glow); }
+  50% { box-shadow: 0 0 10px var(--color-neon-glow), 0 0 20px var(--color-neon-glow), 0 0 30px var(--color-neon-glow); }
+}
+
+@keyframes border-glow {
+  0%, 100% { border-color: var(--color-neon-dark); }
+  50% { border-color: var(--color-neon-primary); }
+}
+
+@keyframes energy-charge {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes grid-scroll {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(40px); }
+}
+
+@keyframes glitch-1 {
+  0%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+  20% { clip-path: inset(20% 0 60% 0); transform: translate(-2px, 1px); }
+  40% { clip-path: inset(40% 0 30% 0); transform: translate(2px, -1px); }
+  60% { clip-path: inset(60% 0 10% 0); transform: translate(-1px, 2px); }
+  80% { clip-path: inset(10% 0 80% 0); transform: translate(1px, -2px); }
+}
+
+@keyframes text-glitch {
+  0%, 100% { text-shadow: none; }
+  10% { text-shadow: -2px 0 #ff0000, 2px 0 #00ffff; }
+  20% { text-shadow: 2px 0 #ff0000, -2px 0 #00ffff; }
+  30% { text-shadow: none; }
+}
+
+@keyframes sweep {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* ── Click ripple ── */
+@keyframes ripple-expand {
+  0% { transform: scale(0); opacity: 0.5; }
+  100% { transform: scale(6); opacity: 0; }
+}
+
+/* ── Screen shake (lockout slam) ── */
+@keyframes screen-shake {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  10% { transform: translate(-5px, -2px) rotate(-0.4deg); }
+  20% { transform: translate(5px, 2px) rotate(0.4deg); }
+  30% { transform: translate(-4px, 1px); }
+  40% { transform: translate(4px, -2px) rotate(0.3deg); }
+  50% { transform: translate(-3px, 2px) rotate(-0.3deg); }
+  60% { transform: translate(3px, 1px); }
+  70% { transform: translate(-2px, -1px) rotate(0.2deg); }
+  80% { transform: translate(2px, 2px) rotate(-0.2deg); }
+  90% { transform: translate(-1px, -1px); }
+}
+
+/* ── Neon sign flicker ── */
+@keyframes neon-flicker {
+  0%, 100% { opacity: 1; }
+  5% { opacity: 0.95; }
+  10% { opacity: 1; }
+  25% { opacity: 1; }
+  26% { opacity: 0.6; }
+  27% { opacity: 1; }
+  70% { opacity: 1; }
+  71% { opacity: 0.75; }
+  72% { opacity: 0.95; }
+  73% { opacity: 0.6; }
+  74% { opacity: 1; }
+  78% { opacity: 1; }
+  79% { opacity: 0.5; }
+  80% { opacity: 0.9; }
+  81% { opacity: 1; }
+}
+
+/* ── Breach pulse (red glow) ── */
+@keyframes breach-pulse {
+  0%, 100% { box-shadow: 0 0 5px rgba(255,0,0,0.2), 0 0 10px rgba(255,0,0,0.1); }
+  50% { box-shadow: 0 0 15px rgba(255,0,0,0.4), 0 0 30px rgba(255,0,0,0.2); }
+}
+
+/* ── EMP wave ── */
+@keyframes emp-expand {
+  0% { transform: scale(0.1); opacity: 0.25; }
+  80% { opacity: 0.08; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+/* ── Scan wipe reveal (login → vault) ── */
+@keyframes scan-reveal {
+  0% { clip-path: inset(0 100% 0 0); }
+  100% { clip-path: inset(0 0% 0 0); }
+}
+
+/* ── Integrity row scan beam ── */
+@keyframes row-scan {
+  0% { opacity: 0; transform: scaleX(0); transform-origin: left; }
+  30% { opacity: 1; transform: scaleX(1); }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ── Digit flip top ── */
+@keyframes flip-top-out {
+  from { transform: rotateX(0deg); }
+  to   { transform: rotateX(-90deg); }
+}
+@keyframes flip-bottom-in {
+  from { transform: rotateX(90deg); }
+  to   { transform: rotateX(0deg); }
+}
+
+/* ── Selection spark burst ── */
+@keyframes spark-out {
+  0% { transform: scale(0) translate(0, 0); opacity: 1; }
+  100% { transform: scale(1) translate(var(--spark-tx), var(--spark-ty)); opacity: 0; }
+}
+
+/* ── Unlock radial burst ── */
+@keyframes burst-ring {
+  0% { transform: scale(0); opacity: 0.8; }
+  100% { transform: scale(3); opacity: 0; }
+}
+@keyframes burst-flash {
+  0% { opacity: 0; }
+  20% { opacity: 0.15; }
+  100% { opacity: 0; }
+}
+
+/* ── Self-destruct red vignette ── */
+@keyframes destruct-pulse {
+  0%, 100% { box-shadow: inset 0 0 60px rgba(255,0,0,0.3); }
+  50% { box-shadow: inset 0 0 120px rgba(255,0,0,0.7); }
+}
+
+/* ── Corner bracket draw-in ── */
+@keyframes bracket-h {
+  from { width: 0; }
+  to   { width: 12px; }
+}
+@keyframes bracket-v {
+  from { height: 0; }
+  to   { height: 12px; }
+}
+
+/* ── Data stream fall ── */
+@keyframes data-fall {
+  0% { transform: translateY(-100%); opacity: 0; }
+  5% { opacity: 1; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════
+   BIOTECH-SPECIFIC ANIMATIONS
+   ═══════════════════════════════════════════ */
+
+@keyframes bio-breathe {
+  0%, 100% {
+    opacity: 0.6;
+    box-shadow: 0 0 8px var(--color-neon-glow);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 20px var(--color-neon-glow), 0 0 40px var(--color-neon-glow);
+  }
+}
+
+@keyframes bio-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes bio-pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+}
+
+@keyframes bio-border-trace {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
+@keyframes bio-ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+@keyframes bio-drift {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(10px, -5px); }
+  50% { transform: translate(-5px, 10px); }
+  75% { transform: translate(-10px, -8px); }
+}
+
+@keyframes bio-luminance {
+  0%, 100% {
+    background-position: 0% 50%;
+    filter: brightness(1);
+  }
+  50% {
+    background-position: 100% 50%;
+    filter: brightness(1.1);
+  }
+}
+
+@keyframes bio-data-stream {
+  0% { transform: translateY(0); opacity: 0; }
+  10% { opacity: 0.3; }
+  90% { opacity: 0.3; }
+  100% { transform: translateY(-100vh); opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════
+   COMMAND-SPECIFIC ANIMATIONS
+   ═══════════════════════════════════════════ */
+
+@keyframes cmd-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1.0; }
+}
+
+@keyframes cmd-scan {
+  0% { transform: translateX(-100%); opacity: 0; }
+  10% { opacity: 0.2; }
+  90% { opacity: 0.2; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes cmd-scan-vertical {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 0.15; }
+  90% { opacity: 0.15; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+
+@keyframes cmd-radar {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes cmd-radial-expand {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes cmd-twinkle {
+  0%, 100% { opacity: 0.1; }
+  50% { opacity: 0.35; }
+}
+
+@keyframes cmd-grid-glow {
+  0%, 100% { opacity: 0.03; }
+  50% { opacity: 0.05; }
+}
+
+/* ── Blood Chrome: Ember Particle Drift ── */
+@keyframes ember-drift-1 {
+  0%   { transform: translateY(0px) translateX(0px) scale(1); opacity: 0.6; }
+  25%  { transform: translateY(-30px) translateX(8px) scale(1.2); opacity: 0.9; }
+  50%  { transform: translateY(-65px) translateX(-5px) scale(0.8); opacity: 0.5; }
+  75%  { transform: translateY(-100px) translateX(10px) scale(1.1); opacity: 0.3; }
+  100% { transform: translateY(-140px) translateX(0px) scale(0.5); opacity: 0; }
+}
+
+@keyframes ember-drift-2 {
+  0%   { transform: translateY(0px) translateX(0px) scale(0.8); opacity: 0.4; }
+  33%  { transform: translateY(-45px) translateX(-12px) scale(1.3); opacity: 0.7; }
+  66%  { transform: translateY(-90px) translateX(6px) scale(0.9); opacity: 0.4; }
+  100% { transform: translateY(-150px) translateX(-8px) scale(0.4); opacity: 0; }
+}
+
+@keyframes ember-drift-3 {
+  0%   { transform: translateY(0px) scale(1); opacity: 0.5; }
+  50%  { transform: translateY(-80px) translateX(15px) scale(1.4); opacity: 0.8; }
+  100% { transform: translateY(-160px) translateX(-5px) scale(0.3); opacity: 0; }
+}
+
+/* ── Blood Chrome: Chrome Sweep Button ── */
+@keyframes chrome-sweep {
+  0%   { transform: translateX(-150%) skewX(-20deg); opacity: 0; }
+  30%  { opacity: 1; }
+  100% { transform: translateX(250%) skewX(-20deg); opacity: 0; }
+}
+
+/* ── Blood Chrome: Spark Burst on Click ── */
+@keyframes crimson-spark-burst {
+  0%   { transform: scale(0); opacity: 0.8; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* ── Blood Chrome: HUD Bracket Pulse ── */
+@keyframes bracket-pulse-crimson {
+  0%, 100% {
+    border-color: rgba(255, 0, 40, 0.4);
+    box-shadow: 0 0 4px rgba(255, 0, 40, 0.2);
+  }
+  50% {
+    border-color: rgba(255, 0, 40, 0.9);
+    box-shadow:
+      0 0 8px rgba(255, 0, 40, 0.6),
+      0 0 16px rgba(255, 0, 40, 0.2);
+  }
+}
+
+/* ── Blood Chrome: Selected File Ember Border ── */
+@keyframes crimson-ember-border {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(255, 0, 40, 0.3), 0 0 20px rgba(255, 0, 40, 0.1);
+    border-color: rgba(255, 0, 40, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(255, 0, 40, 0.5), 0 0 35px rgba(255, 0, 40, 0.2), 0 0 60px rgba(255, 0, 40, 0.06);
+    border-color: rgba(255, 0, 40, 0.8);
+  }
+}
+
+/* ── Blood Chrome: Burn Dissolve on Delete ── */
+@keyframes crimson-burn-out {
+  0%   { filter: brightness(1) saturate(1); opacity: 1; }
+  30%  { filter: brightness(1.8) saturate(2); opacity: 0.9; border-color: rgba(255, 100, 0, 0.8); }
+  60%  { filter: brightness(2.5) saturate(1.5); opacity: 0.5; }
+  100% { filter: brightness(3) saturate(0) blur(8px); opacity: 0; transform: scale(0.85); }
+}
+
+/* ── Blood Chrome: Folder Heat Haze ── */
+@keyframes crimson-heat-haze {
+  0%, 100% { transform: skewX(0deg) translateX(0); }
+  25%      { transform: skewX(0.2deg) translateX(0.3px); }
+  75%      { transform: skewX(-0.2deg) translateX(-0.3px); }
+}
+
+/* ── Blood Chrome: Modal/Settings Damaged Screen Flicker ── */
+@keyframes crimson-screen-flicker {
+  0%   { opacity: 0; transform: scale(1.02) translateX(1px); }
+  8%   { opacity: 0.6; transform: scale(0.99) translateX(-2px); }
+  12%  { opacity: 0.2; transform: scale(1.01) translateX(1px); }
+  20%  { opacity: 0.8; transform: scale(1) translateX(0); }
+  28%  { opacity: 0.4; transform: scale(0.995) translateX(-1px); }
+  35%  { opacity: 1; transform: scale(1) translateX(0); }
+  100% { opacity: 1; transform: scale(1) translateX(0); }
+}
+
+/* ── Blood Chrome: Scrollbar Thumb Pulse ── */
+@keyframes crimson-scrollbar-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(255, 0, 40, 0.3); }
+  50%      { box-shadow: 0 0 10px rgba(255, 0, 40, 0.6), 0 0 20px rgba(255, 0, 40, 0.2); }
+}
+
+/* ── Blood Chrome: Status Bar Text Glitch ── */
+@keyframes crimson-text-glitch {
+  0%, 94%, 100% { transform: none; opacity: 1; filter: none; }
+  95%  { transform: translateX(2px) skewX(5deg); opacity: 0.8; filter: hue-rotate(20deg); }
+  96%  { transform: translateX(-3px) skewX(-3deg); opacity: 0.5; filter: hue-rotate(-10deg); }
+  97%  { transform: translateX(1px); opacity: 0.9; filter: none; }
+  98%  { transform: none; opacity: 0.7; filter: hue-rotate(10deg); }
+}
+
+/* ── Blood Chrome: Unlock Power-On Sequence ── */
+@keyframes crimson-power-line {
+  0%   { transform: scaleY(0); opacity: 0; }
+  8%   { transform: scaleY(0.002); opacity: 1; }
+  50%  { transform: scaleY(0.002); opacity: 1; }
+  100% { transform: scaleY(1); opacity: 0; }
+}
+
+@keyframes crimson-static-noise {
+  0%   { background-position: 0 0;     opacity: 0.2; }
+  20%  { background-position: -5px 3px; opacity: 0.1; }
+  40%  { background-position: 3px -2px; opacity: 0.25; }
+  60%  { background-position: -2px 5px; opacity: 0.08; }
+  80%  { background-position: 4px -3px; opacity: 0.18; }
+  100% { background-position: 0 0;     opacity: 0.2; }
+}
+
+/* ── Blood Chrome: Ember Glow Atmosphere (#root::before) ── */
+@keyframes crimson-ember-glow {
+  0%   { background-position: 20% 90%, 80% 70%, 50% 100%; filter: brightness(1); }
+  33%  { background-position: 25% 85%, 75% 75%, 45% 95%;  filter: brightness(1.08); }
+  66%  { background-position: 18% 92%, 82% 68%, 55% 98%;  filter: brightness(1.04); }
+  100% { background-position: 20% 90%, 80% 70%, 50% 100%; filter: brightness(1); }
+}
+
+/* ── Blood Chrome: Deep Lightning Flash (#root::after) ── */
+@keyframes crimson-lightning {
+  0%, 41%, 43%, 77%, 79%, 100% { opacity: 0; }
+  42%    { opacity: 0.035; }
+  42.5%  { opacity: 0; }
+  78%    { opacity: 0.05; }
+  78.3%  { opacity: 0.02; }
+  78.6%  { opacity: 0; }
+}
+
+/* ── Blood Chrome: CRT Scan Line (#root > *::before) ── */
+@keyframes crimson-scanline {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+/* ── Blood Chrome: Hex Grid Pulse ── */
+@keyframes crimson-hex-pulse {
+  0%, 100% { opacity: 0.018; }
+  50%      { opacity: 0.05; }
+}
+
+/* ── Blood Chrome: Heat Shimmer (subtle background distortion) ── */
+@keyframes crimson-heat-shimmer {
+  0%, 100% { filter: none; }
+  50%      { filter: blur(0.3px) brightness(1.01); }
+}
+
+/* ── Prismatic keyframe animations ── */
+@keyframes liquid-spectrum {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes spectrum-flow {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes prism-shimmer {
+  0%   { transform: translateX(-120%) skewX(-20deg); }
+  100% { transform: translateX(220%) skewX(-20deg); }
+}
+
+@keyframes prism-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════
+   VOID PRISM — RAINBOW OVERRIDES
+   ═══════════════════════════════════════════ */
+
+/* ── Void Prism: Aurora Atmosphere Background ── */
+@keyframes aurora-shift {
+  0% {
+    background-position: 0% 0%, 100% 100%, 50% 50%;
+    opacity: 0.6;
+  }
+  33% {
+    background-position: 30% 20%, 70% 80%, 20% 60%;
+    opacity: 0.8;
+  }
+  66% {
+    background-position: 60% 10%, 40% 90%, 80% 30%;
+    opacity: 0.65;
+  }
+  100% {
+    background-position: 0% 0%, 100% 100%, 50% 50%;
+    opacity: 0.6;
+  }
+}
+
+/* ── Void Prism: Spectrum Particle Field ── */
+@keyframes void-twinkle {
+  0%, 100% { opacity: 0.15; }
+  50%       { opacity: 0.55; }
+}
+
+/* ── Void Prism: Multi-Color Spectrum Particles ── */
+@keyframes void-particle-1 {
+  0%   { transform: translateY(0px) translateX(0px); opacity: 0; }
+  10%  { opacity: 0.5; }
+  70%  { transform: translateY(-70px) translateX(8px); opacity: 0.4; }
+  100% { transform: translateY(-120px) translateX(-5px); opacity: 0; }
+}
+
+@keyframes void-particle-2 {
+  0%   { transform: translateY(0px); opacity: 0; }
+  15%  { opacity: 0.6; }
+  65%  { transform: translateY(-55px) translateX(-10px); opacity: 0.4; }
+  100% { transform: translateY(-110px) translateX(6px); opacity: 0; }
+}
+
+@keyframes void-particle-3 {
+  0%   { transform: translateY(0px) scale(1); opacity: 0; }
+  20%  { opacity: 0.5; }
+  60%  { transform: translateY(-80px) translateX(12px) scale(1.2); opacity: 0.35; }
+  100% { transform: translateY(-140px) translateX(-8px) scale(0.6); opacity: 0; }
+}
+
+/* ── Void Prism: Oil Slick Button Hover ── */
+@keyframes oil-slick-sweep {
+  0%   { transform: translateX(-160%) skewX(-20deg); opacity: 0; }
+  15%  { opacity: 1; }
+  100% { transform: translateX(260%) skewX(-20deg); opacity: 0; }
+}
+
+/* ── Void Prism: Rainbow Corner Pulse ── */
+@keyframes prism-bracket-pulse {
+  0%   { border-color: rgba(34, 238, 255, 0.5);  box-shadow: 0 0 4px rgba(34, 238, 255, 0.25); }
+  16%  { border-color: rgba(136, 51, 255, 0.5);  box-shadow: 0 0 4px rgba(136, 51, 255, 0.25); }
+  33%  { border-color: rgba(255, 34, 187, 0.5);  box-shadow: 0 0 4px rgba(255, 34, 187, 0.25); }
+  50%  { border-color: rgba(255, 34, 68, 0.5);   box-shadow: 0 0 4px rgba(255, 34, 68, 0.25);  }
+  66%  { border-color: rgba(255, 204, 0, 0.5);   box-shadow: 0 0 4px rgba(255, 204, 0, 0.25);  }
+  83%  { border-color: rgba(34, 255, 136, 0.5);  box-shadow: 0 0 4px rgba(34, 255, 136, 0.25); }
+  100% { border-color: rgba(34, 238, 255, 0.5);  box-shadow: 0 0 4px rgba(34, 238, 255, 0.25); }
+}
+
+/* ── Prismatic: Rainbow Shimmer Button Hover ── */
+@keyframes prism-rainbow-shimmer {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ── Prismatic: Crystal Shatter Burst on Click ── */
+@keyframes prism-crystal-shatter {
+  0%   { transform: scale(0) rotate(0deg); opacity: 0.6; }
+  50%  { transform: scale(2) rotate(45deg); opacity: 0.3; }
+  100% { transform: scale(4) rotate(90deg); opacity: 0; }
+}
+
+/* ── Prismatic: Selected File — Continuously Cycling Rainbow Border ── */
+@keyframes prism-rainbow-cycle {
+  0%   { border-color: rgba(255,34,68,0.5);  box-shadow: 0 0 8px rgba(255,34,68,0.2); }
+  12%  { border-color: rgba(255,136,51,0.5); box-shadow: 0 0 8px rgba(255,136,51,0.2); }
+  25%  { border-color: rgba(255,204,34,0.5); box-shadow: 0 0 8px rgba(255,204,34,0.2); }
+  37%  { border-color: rgba(51,255,136,0.5); box-shadow: 0 0 8px rgba(51,255,136,0.2); }
+  50%  { border-color: rgba(34,238,255,0.5); box-shadow: 0 0 8px rgba(34,238,255,0.2); }
+  62%  { border-color: rgba(51,102,255,0.5); box-shadow: 0 0 8px rgba(51,102,255,0.2); }
+  75%  { border-color: rgba(153,68,255,0.5); box-shadow: 0 0 8px rgba(153,68,255,0.2); }
+  87%  { border-color: rgba(255,68,204,0.5); box-shadow: 0 0 8px rgba(255,68,204,0.2); }
+  100% { border-color: rgba(255,34,68,0.5);  box-shadow: 0 0 8px rgba(255,34,68,0.2); }
+}
+
+/* ── Prismatic: Folder Prism Light Beam ── */
+@keyframes prism-beam-split {
+  0%   { left: -40%; opacity: 0; }
+  10%  { opacity: 0.7; }
+  90%  { opacity: 0.4; }
+  100% { left: 130%; opacity: 0; }
+}
+
+/* ── Prismatic: Lock Button Rainbow Pulse (7s cycle) ── */
+@keyframes prism-lock-rainbow {
+  0%   { box-shadow: 0 0 8px rgba(255,34,68,0.3),  0 0 20px rgba(255,34,68,0.1); }
+  14%  { box-shadow: 0 0 8px rgba(255,204,0,0.3),   0 0 20px rgba(255,204,0,0.1); }
+  28%  { box-shadow: 0 0 8px rgba(34,255,136,0.3),  0 0 20px rgba(34,255,136,0.1); }
+  42%  { box-shadow: 0 0 8px rgba(34,238,255,0.3),  0 0 20px rgba(34,238,255,0.1); }
+  57%  { box-shadow: 0 0 8px rgba(51,102,255,0.3),  0 0 20px rgba(51,102,255,0.1); }
+  71%  { box-shadow: 0 0 8px rgba(153,68,255,0.3),  0 0 20px rgba(153,68,255,0.1); }
+  85%  { box-shadow: 0 0 8px rgba(255,68,204,0.3),  0 0 20px rgba(255,68,204,0.1); }
+  100% { box-shadow: 0 0 8px rgba(255,34,68,0.3),   0 0 20px rgba(255,34,68,0.1); }
+}
+
+/* ── Prismatic: Status Bar Rainbow Text Shimmer ── */
+@keyframes prism-text-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ── Prismatic: Settings Crystallize Open ── */
+@keyframes prism-crystallize {
+  0%   {
+    opacity: 0;
+    transform: scale(0.8);
+    clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%);
+    filter: brightness(2) saturate(1.5) hue-rotate(0deg);
+  }
+  30% {
+    opacity: 0.8;
+    clip-path: polygon(0% 0%, 100% 0%, 100% 50%, 50% 100%);
+    filter: brightness(1.4) hue-rotate(60deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.02);
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 80%);
+    filter: brightness(1.1) hue-rotate(120deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+    filter: brightness(1) hue-rotate(0deg);
+  }
+}
+
+@keyframes bio-bloom-shift {
+  0% {
+    background:
+      radial-gradient(ellipse at 15% 85%, rgba(0, 255, 140, 0.07) 0%, transparent 55%),
+      radial-gradient(ellipse at 80% 90%, rgba(0, 200, 120, 0.05) 0%, transparent 45%),
+      radial-gradient(ellipse at 50% 100%, rgba(0, 255, 179, 0.04) 0%, transparent 40%),
+      radial-gradient(ellipse at 30% 60%, rgba(0, 180, 100, 0.03) 0%, transparent 35%);
+  }
+  50% {
+    background:
+      radial-gradient(ellipse at 25% 75%, rgba(0, 255, 179, 0.09) 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 95%, rgba(0, 220, 140, 0.06) 0%, transparent 40%),
+      radial-gradient(ellipse at 40% 100%, rgba(0, 200, 150, 0.05) 0%, transparent 45%),
+      radial-gradient(ellipse at 60% 50%, rgba(0, 255, 140, 0.04) 0%, transparent 30%);
+  }
+  100% {
+    background:
+      radial-gradient(ellipse at 10% 90%, rgba(0, 220, 120, 0.06) 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 80%, rgba(0, 255, 160, 0.07) 0%, transparent 45%),
+      radial-gradient(ellipse at 55% 95%, rgba(0, 255, 179, 0.05) 0%, transparent 40%),
+      radial-gradient(ellipse at 20% 55%, rgba(0, 200, 120, 0.03) 0%, transparent 35%);
+  }
+}
+
+/* ── Neural Forest: Bioluminescent Spore Particles ── */
+@keyframes spore-drift-1 {
+  0%   { transform: translateY(0px) translateX(0px) scale(1); opacity: 0; }
+  10%  { opacity: 0.5; }
+  60%  { transform: translateY(-60px) translateX(8px) scale(1.3); opacity: 0.7; }
+  100% { transform: translateY(-120px) translateX(-5px) scale(0.6); opacity: 0; }
+}
+
+@keyframes spore-drift-2 {
+  0%   { transform: translateY(0px) scale(0.8); opacity: 0; }
+  15%  { opacity: 0.4; }
+  55%  { transform: translateY(-50px) translateX(-10px) scale(1.2); opacity: 0.6; }
+  100% { transform: translateY(-110px) translateX(6px) scale(0.5); opacity: 0; }
+}
+
+@keyframes spore-drift-3 {
+  0%   { transform: translateY(0px); opacity: 0; }
+  20%  { opacity: 0.6; }
+  70%  { transform: translateY(-80px) translateX(12px) scale(1.4); opacity: 0.5; }
+  100% { transform: translateY(-140px) translateX(-8px) scale(0.4); opacity: 0; }
+}
+
+/* ── Neural Forest: Heartbeat Button ── */
+@keyframes heartbeat-glow {
+  0%   { box-shadow: 0 0 8px rgba(0, 255, 179, 0.2), 0 0 16px rgba(0, 255, 179, 0.1); }
+  14%  { box-shadow: 0 0 16px rgba(0, 255, 179, 0.5), 0 0 32px rgba(0, 255, 179, 0.25); }
+  28%  { box-shadow: 0 0 8px rgba(0, 255, 179, 0.2), 0 0 16px rgba(0, 255, 179, 0.1); }
+  42%  { box-shadow: 0 0 22px rgba(0, 255, 179, 0.6), 0 0 44px rgba(0, 255, 179, 0.3); }
+  70%  { box-shadow: 0 0 8px rgba(0, 255, 179, 0.2), 0 0 16px rgba(0, 255, 179, 0.1); }
+  100% { box-shadow: 0 0 8px rgba(0, 255, 179, 0.2), 0 0 16px rgba(0, 255, 179, 0.1); }
+}
+
+@keyframes bio-sheen {
+  0%   { transform: translateX(-150%) skewX(-15deg); opacity: 0; }
+  25%  { opacity: 0.6; }
+  100% { transform: translateX(250%) skewX(-15deg); opacity: 0; }
+}
+
+/* ── Neural Forest: Organic Breathing Corner Glow ── */
+@keyframes bio-membrane-breathe {
+  0%, 100% {
+    box-shadow:
+      0 0 4px rgba(0, 255, 179, 0.2),
+      inset 0 0 4px rgba(0, 255, 179, 0.05);
+    border-color: rgba(0, 255, 179, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 12px rgba(0, 255, 179, 0.45),
+      0 0 24px rgba(0, 255, 179, 0.15),
+      inset 0 0 8px rgba(0, 255, 179, 0.08);
+    border-color: rgba(0, 255, 179, 0.5);
+  }
+}
+
+/* ── Biotech: Organic Growth Button Hover ── */
+@keyframes bio-growth-lines {
+  0%   { clip-path: inset(45% 45% 45% 45%); opacity: 0; }
+  30%  { opacity: 0.5; }
+  100% { clip-path: inset(0% 0% 0% 0%); opacity: 0; }
+}
+
+/* ── Biotech: Cell Burst on Click ── */
+@keyframes bio-cell-burst {
+  0%   { transform: scale(0); opacity: 0.5; border-width: 1.5px; }
+  40%  { border-width: 1px; }
+  100% { transform: scale(3.5); opacity: 0; border-width: 0.3px; }
+}
+
+/* ── Biotech: Selected File — Heartbeat Border Pulse ── */
+@keyframes bio-heartbeat {
+  0%   { box-shadow: 0 0 4px rgba(0,230,118,0.1); border-color: rgba(0,255,179,0.2); }
+  7%   { box-shadow: 0 0 12px rgba(0,230,118,0.35), 0 0 25px rgba(0,230,118,0.12); border-color: rgba(0,255,179,0.5); }
+  14%  { box-shadow: 0 0 4px rgba(0,230,118,0.1); border-color: rgba(0,255,179,0.2); }
+  21%  { box-shadow: 0 0 10px rgba(0,230,118,0.3), 0 0 20px rgba(0,230,118,0.1); border-color: rgba(0,255,179,0.45); }
+  35%  { box-shadow: 0 0 4px rgba(0,230,118,0.1); border-color: rgba(0,255,179,0.2); }
+  100% { box-shadow: 0 0 4px rgba(0,230,118,0.1); border-color: rgba(0,255,179,0.2); }
+}
+
+/* ── Biotech: Folder Bioluminescent Bloom ── */
+@keyframes bio-bloom-glow {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(0,230,118,0.05);
+  }
+  50% {
+    box-shadow:
+      0 0 12px rgba(0,230,118,0.15),
+      0 0 30px rgba(0,230,118,0.06),
+      inset 0 0 15px rgba(0,255,179,0.04);
+  }
+}
+
+/* ── Biotech: Lock Button Heartbeat (10s cycle) ── */
+@keyframes bio-lock-heartbeat {
+  0%, 10%, 20%, 30%, 100% {
+    box-shadow: 0 0 6px rgba(0,230,118,0.15);
+  }
+  5% {
+    box-shadow: 0 0 12px rgba(0,230,118,0.4), 0 0 25px rgba(0,230,118,0.15);
+  }
+  15% {
+    box-shadow: 0 0 10px rgba(0,230,118,0.35), 0 0 20px rgba(0,230,118,0.12);
+  }
+}
+
+/* ── Biotech: Status Bar Bioluminescent Shimmer ── */
+@keyframes bio-text-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ── Biotech: Scrollbar Bioluminescent Pulse ── */
+@keyframes bio-scrollbar-glow {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(0,255,179,0.2), 0 0 8px rgba(0,230,118,0.1);
+  }
+  50% {
+    box-shadow: 0 0 8px rgba(0,255,179,0.4), 0 0 16px rgba(0,230,118,0.2), 0 0 24px rgba(0,255,179,0.08);
+  }
+}
+
+/* ── Biotech: Settings Cell Membrane Open ── */
+@keyframes bio-membrane-form {
+  0%   {
+    opacity: 0;
+    clip-path: circle(5% at 50% 50%);
+    filter: brightness(1.5) blur(3px);
+  }
+  40% {
+    opacity: 0.9;
+    clip-path: circle(45% at 50% 50%);
+    filter: brightness(1.2) blur(1px);
+  }
+  70% {
+    opacity: 1;
+    clip-path: circle(70% at 50% 50%);
+    filter: brightness(1.05) blur(0);
+  }
+  100% {
+    opacity: 1;
+    clip-path: circle(100% at 50% 50%);
+    filter: brightness(1);
+  }
+}
+
+/* ── Biotech: Progress Bar Organic Flow ── */
+@keyframes bio-organic-flow {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes star-twinkle {
+  0%   { opacity: 0.4; }
+  30%  { opacity: 0.7; }
+  60%  { opacity: 0.5; }
+  100% { opacity: 0.9; }
+}
+
+/* ── Deep Space: Drifting Star Particles ── */
+@keyframes space-drift-1 {
+  0%   { transform: translateY(0px) translateX(0px); opacity: 0.2; }
+  50%  { transform: translateY(-20px) translateX(6px); opacity: 0.6; }
+  100% { transform: translateY(-40px) translateX(-4px); opacity: 0.1; }
+}
+
+@keyframes space-drift-2 {
+  0%   { transform: translateY(0px) translateX(0px); opacity: 0.3; }
+  40%  { transform: translateY(-15px) translateX(-8px); opacity: 0.7; }
+  100% { transform: translateY(-35px) translateX(5px); opacity: 0.1; }
+}
+
+@keyframes space-drift-3 {
+  0%   { transform: translateY(0px); opacity: 0.15; }
+  60%  { transform: translateY(-25px) translateX(10px); opacity: 0.5; }
+  100% { transform: translateY(-50px) translateX(-3px); opacity: 0; }
+}
+
+/* ── Deep Space: Holographic Foil Button ── */
+@keyframes holo-foil {
+  0%   { transform: translateX(-150%) skewX(-20deg); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translateX(250%) skewX(-20deg); opacity: 0; }
+}
+
+/* ── Deep Space: Precision Corner Pulse ── */
+@keyframes bracket-pulse-blue {
+  0%, 100% {
+    border-color: rgba(0, 200, 255, 0.3);
+    box-shadow: 0 0 3px rgba(0, 200, 255, 0.15);
+  }
+  50% {
+    border-color: rgba(0, 200, 255, 0.8);
+    box-shadow:
+      0 0 6px rgba(0, 200, 255, 0.5),
+      0 0 14px rgba(0, 200, 255, 0.2);
+  }
+}
+
+/* ── Deep Space: Horizontal Scan Sweep ── */
+@keyframes cmd-h-scan {
+  0%   { transform: translateY(-100vh); opacity: 0; }
+  5%   { opacity: 0.06; }
+  95%  { opacity: 0.06; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+/* ── Command Blue: Targeting Reticle Button Hover ── */
+@keyframes cmd-reticle-converge {
+  0%   { clip-path: inset(0); opacity: 0; }
+  20%  { opacity: 0.6; }
+  40%  {
+    clip-path: polygon(
+      0% 48%, 35% 48%, 35% 0%, 37% 0%, 37% 48%, 63% 48%, 63% 0%, 65% 0%, 65% 48%, 100% 48%,
+      100% 52%, 65% 52%, 65% 100%, 63% 100%, 63% 52%, 37% 52%, 37% 100%, 35% 100%, 35% 52%, 0% 52%
+    );
+    opacity: 0.4;
+  }
+  100% { opacity: 0.2; }
+}
+
+/* ── Command Blue: Sonar Ping Burst on Click ── */
+@keyframes cmd-sonar-ping {
+  0%   { transform: scale(0); opacity: 0.5; border-width: 1.5px; }
+  50%  { border-width: 1px; }
+  100% { transform: scale(4); opacity: 0; border-width: 0.3px; }
+}
+
+/* ── Command Blue: Selected File — Tactical Bracket Corners ── */
+@keyframes cmd-bracket-lock {
+  0%, 100% {
+    border-color: rgba(33, 150, 243, 0.4);
+    box-shadow: 0 0 4px rgba(33, 150, 243, 0.15);
+  }
+  50% {
+    border-color: rgba(100, 181, 246, 0.8);
+    box-shadow: 0 0 8px rgba(33, 150, 243, 0.4), 0 0 16px rgba(33, 150, 243, 0.15);
+  }
+}
+
+/* ── Command Blue: Folder Scan Beam ── */
+@keyframes cmd-scan-beam {
+  0%   { left: -30%; opacity: 0; }
+  10%  { opacity: 0.6; }
+  90%  { opacity: 0.3; }
+  100% { left: 130%; opacity: 0; }
+}
+
+/* ── Command Blue: Lock Button Active Beacon ── */
+@keyframes cmd-beacon-pulse {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(33, 150, 243, 0.2), 0 0 12px rgba(33, 150, 243, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(33, 150, 243, 0.4), 0 0 25px rgba(33, 150, 243, 0.15), 0 0 40px rgba(33, 150, 243, 0.06);
+  }
+}
+
+/* ── Command Blue: Status Bar Comms Interference ── */
+@keyframes cmd-comms-interference {
+  0%, 100% { clip-path: inset(0); opacity: 1; }
+  12%  { clip-path: inset(0 0 55% 0); opacity: 0.9; transform: translateX(1px); }
+  12.5%  { clip-path: inset(0); opacity: 1; transform: none; }
+  56% { clip-path: inset(35% 0 0 0); opacity: 0.85; transform: translateX(-2px); }
+  56.5% { clip-path: inset(0); opacity: 1; transform: none; }
+  83% { clip-path: inset(15% 0 45% 0); opacity: 0.9; transform: translateX(1px); }
+  83.5% { clip-path: inset(0); opacity: 1; transform: none; }
+}
+
+/* ── Command Blue: Settings HUD Assemble ── */
+@keyframes cmd-hud-assemble {
+  0%   { opacity: 0; transform: scale(0.95) translateY(-8px); clip-path: inset(5% 5% 5% 5%); filter: brightness(1.3); }
+  30%  { opacity: 0.8; clip-path: inset(2% 2% 2% 2%); }
+  60%  { opacity: 1; transform: scale(1.01) translateY(0); clip-path: inset(0); filter: brightness(1.1); }
+  100% { opacity: 1; transform: scale(1); filter: brightness(1); }
+}
+
+/* ── Command Blue: Progress Bar Tactical Fill ── */
+@keyframes cmd-tactical-fill {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ── Neon City: Keyframes ── */
+
+@keyframes nc-skyline-glow {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  25% {
+    opacity: 1;
+    filter: brightness(1.1);
+  }
+  50% {
+    opacity: 0.85;
+  }
+  75% {
+    opacity: 1;
+    filter: brightness(1.15);
+  }
+}
+
+@keyframes nc-neon-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 8px rgba(0, 200, 255, 0.5),
+      0 0 20px rgba(0, 200, 255, 0.3),
+      0 0 40px rgba(0, 200, 255, 0.15);
+  }
+  50% {
+    box-shadow:
+      0 0 14px rgba(0, 255, 255, 0.8),
+      0 0 35px rgba(0, 200, 255, 0.5),
+      0 0 70px rgba(0, 200, 255, 0.25),
+      0 0 100px rgba(0, 150, 255, 0.1);
+  }
+}
+
+@keyframes nc-tube-flicker {
+  0%   { opacity: 1; }
+  5%   { opacity: 0.6; }
+  6%   { opacity: 1; }
+  15%  { opacity: 0.85; }
+  16%  { opacity: 1; }
+  40%  { opacity: 1; }
+  42%  { opacity: 0.5; }
+  43%  { opacity: 0.9; }
+  44%  { opacity: 0.4; }
+  46%  { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+@keyframes nc-particle-rise-1 {
+  0%   { transform: translateY(0) scale(1); opacity: 0; }
+  5%   { opacity: 0.9; }
+  40%  { transform: translateY(-100px) translateX(15px) scale(1.6); opacity: 0.7; }
+  100% { transform: translateY(-200px) translateX(-10px) scale(0.3); opacity: 0; }
+}
+
+@keyframes nc-particle-rise-2 {
+  0%   { transform: translateY(0) scale(0.8); opacity: 0; }
+  8%   { opacity: 0.85; }
+  50%  { transform: translateY(-80px) translateX(-18px) scale(1.3); opacity: 0.6; }
+  100% { transform: translateY(-170px) translateX(12px) scale(0.2); opacity: 0; }
+}
+
+@keyframes nc-particle-rise-3 {
+  0%   { transform: translateY(0); opacity: 0; }
+  10%  { opacity: 1; }
+  35%  { transform: translateY(-120px) translateX(20px) scale(1.8); opacity: 0.5; }
+  100% { transform: translateY(-220px) translateX(-15px) scale(0.15); opacity: 0; }
+}
+
+@keyframes nc-arc-sweep {
+  0%   { transform: translateX(-200%) skewX(-30deg); opacity: 0; }
+  8%   { opacity: 1; }
+  100% { transform: translateX(300%) skewX(-30deg); opacity: 0; }
+}
+
+@keyframes nc-electric-ripple {
+  0% {
+    transform: scale(0.8);
+    box-shadow: 0 0 0 0 rgba(0, 255, 255, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(0, 255, 255, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(0, 255, 255, 0);
+  }
+}
+
+@keyframes nc-grid-pulse {
+  0%, 100% { opacity: 0.5; }
+  30%       { opacity: 0.9; }
+  60%       { opacity: 0.6; }
+  80%       { opacity: 1; }
+}
+
+@keyframes nc-bracket-strobe {
+  0%, 100% {
+    border-color: rgba(0, 255, 255, 0.4);
+    box-shadow: 0 0 3px rgba(0, 255, 255, 0.2);
+  }
+  15% {
+    border-color: rgba(0, 255, 255, 1);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.8), 0 0 20px rgba(0, 255, 255, 0.4), 0 0 30px rgba(0, 200, 255, 0.2);
+  }
+  18% {
+    border-color: rgba(0, 255, 255, 0.3);
+    box-shadow: 0 0 2px rgba(0, 255, 255, 0.15);
+  }
+  50% {
+    border-color: rgba(0, 200, 255, 0.9);
+    box-shadow: 0 0 12px rgba(0, 200, 255, 0.7), 0 0 25px rgba(0, 200, 255, 0.35);
+  }
+  52% {
+    border-color: rgba(0, 255, 255, 0.5);
+    box-shadow: 0 0 4px rgba(0, 255, 255, 0.3);
+  }
+}
+
+@keyframes nc-scanline {
+  0%   { transform: translateY(-100vh); opacity: 0; }
+  3%   { opacity: 0.6; }
+  50%  { opacity: 0.3; }
+  97%  { opacity: 0.2; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+@keyframes nc-city-lights-flicker {
+  0%, 100% { opacity: 0.3; }
+  10%       { opacity: 0.7; }
+  20%       { opacity: 0.4; }
+  35%       { opacity: 0.9; }
+  50%       { opacity: 0.5; }
+  65%       { opacity: 0.8; }
+  80%       { opacity: 0.3; }
+  90%       { opacity: 0.7; }
+}
+
+@keyframes nc-streak-flash {
+  0%   { transform: translateX(-120%) skewX(-25deg); opacity: 0; }
+  5%   { opacity: 0.5; }
+  50%  { opacity: 0.25; }
+  100% { transform: translateX(220%) skewX(-25deg); opacity: 0; }
+}
+
+/* ── Neon City: Wet Street Reflection at Bottom ── */
+@keyframes nc-wet-street-shimmer {
+  0%, 100% { opacity: 0.6; filter: brightness(1); }
+  30%      { opacity: 0.8; filter: brightness(1.1); }
+  60%      { opacity: 0.65; filter: brightness(1.05); }
+  85%      { opacity: 0.9; filter: brightness(1.15); }
+}
+
+/* ── Neon City: Horizontal Fog Drift ── */
+@keyframes nc-fog-drift {
+  0%   { transform: translateX(-20%); opacity: 0.3; }
+  50%  { transform: translateX(10%); opacity: 0.45; }
+  100% { transform: translateX(-20%); opacity: 0.3; }
+}
+
+/* ── Neon City: Distant Neon Sign Flicker ── */
+@keyframes nc-distant-sign-1 {
+  0%, 18%, 22%, 100% { opacity: 0; }
+  19%, 21% { opacity: 0.7; }
+  20% { opacity: 0; }
+}
+@keyframes nc-distant-sign-2 {
+  0%, 45%, 48%, 51%, 100% { opacity: 0; }
+  46%, 47% { opacity: 0.6; }
+  49%, 50% { opacity: 0.5; }
+}
+@keyframes nc-distant-sign-3 {
+  0%, 70%, 73%, 100% { opacity: 0; }
+  71% { opacity: 0.4; }
+  72% { opacity: 0.8; }
+}
+
+/* ── Neon City: CSS Rain Streaks (performant, no JS) ── */
+@keyframes nc-rain-fall-1 {
+  0%   { transform: translateY(-100vh) translateX(0); opacity: 0; }
+  5%   { opacity: 0.6; }
+  95%  { opacity: 0.4; }
+  100% { transform: translateY(105vh) translateX(-8px); opacity: 0; }
+}
+@keyframes nc-rain-fall-2 {
+  0%   { transform: translateY(-100vh) translateX(0); opacity: 0; }
+  3%   { opacity: 0.5; }
+  97%  { opacity: 0.35; }
+  100% { transform: translateY(105vh) translateX(-5px); opacity: 0; }
+}
+@keyframes nc-rain-fall-3 {
+  0%   { transform: translateY(-100vh) translateX(0); opacity: 0; }
+  7%   { opacity: 0.45; }
+  93%  { opacity: 0.3; }
+  100% { transform: translateY(105vh) translateX(-12px); opacity: 0; }
+}
+
+/* ── Neon City: Button Buzz Flicker (neon sign lighting up) ── */
+@keyframes nc-buzz-light {
+  0%   { opacity: 0.5; }
+  10%  { opacity: 1; }
+  12%  { opacity: 0.4; }
+  14%  { opacity: 0.9; }
+  16%  { opacity: 0.3; }
+  20%  { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+/* ── Neon City: Raindrop Ripple on Click ── */
+@keyframes nc-raindrop-ripple {
+  0%   { transform: scale(0); opacity: 0.6; border-width: 2px; }
+  60%  { border-width: 1px; }
+  100% { transform: scale(4); opacity: 0; border-width: 0.5px; }
+}
+
+/* ── Neon City: Selected File Neon Border Cycle ── */
+@keyframes nc-neon-border-cycle {
+  0%, 100% {
+    border-color: rgba(0, 255, 255, 0.5);
+    box-shadow: 0 0 8px rgba(0, 255, 255, 0.2), 0 0 20px rgba(0, 255, 255, 0.08);
+  }
+  33% {
+    border-color: rgba(255, 68, 170, 0.5);
+    box-shadow: 0 0 8px rgba(255, 68, 170, 0.2), 0 0 20px rgba(255, 68, 170, 0.08);
+  }
+  66% {
+    border-color: rgba(0, 200, 255, 0.5);
+    box-shadow: 0 0 8px rgba(0, 200, 255, 0.2), 0 0 20px rgba(0, 200, 255, 0.08);
+  }
+}
+
+/* ── Neon City: Folder Wet Reflection Below ── */
+@keyframes nc-wet-reflection-below {
+  0%, 100% {
+    box-shadow:
+      0 8px 20px rgba(0, 255, 255, 0.06),
+      0 12px 35px rgba(0, 150, 255, 0.04);
+  }
+  50% {
+    box-shadow:
+      0 10px 30px rgba(0, 255, 255, 0.12),
+      0 16px 50px rgba(0, 150, 255, 0.07),
+      0 20px 60px rgba(255, 68, 170, 0.03);
+  }
+}
+
+/* ── Neon City: Static Glitch Dissolve (file delete) ── */
+@keyframes nc-glitch-dissolve {
+  0%   { clip-path: inset(0); filter: none; opacity: 1; }
+  15%  { clip-path: inset(10% 0 20% 0); filter: hue-rotate(90deg) brightness(2); }
+  30%  { clip-path: inset(5% 0 40% 0); filter: hue-rotate(-45deg) saturate(3); transform: translateX(4px); }
+  45%  { clip-path: inset(30% 0 15% 0); filter: brightness(3) blur(1px); transform: translateX(-6px); }
+  60%  { clip-path: inset(60% 0 5% 0); filter: hue-rotate(180deg) brightness(2); transform: translateX(2px); }
+  75%  { clip-path: inset(20% 0 70% 0); filter: blur(3px); opacity: 0.5; }
+  90%  { clip-path: inset(80% 0 15% 0); filter: blur(6px); opacity: 0.2; }
+  100% { clip-path: inset(100% 0 0% 0); filter: blur(8px); opacity: 0; }
+}
+
+/* ── Neon City: Lock Button Neon Buzz ── */
+@keyframes nc-lock-buzz {
+  0%, 5%, 7%, 100% {
+    box-shadow: 0 0 8px rgba(0, 255, 255, 0.3), 0 0 20px rgba(0, 200, 255, 0.15);
+    text-shadow: 0 0 6px rgba(0, 255, 255, 0.5);
+  }
+  3% {
+    box-shadow: 0 0 2px rgba(0, 255, 255, 0.1);
+    text-shadow: none;
+  }
+  50%, 52%, 55% {
+    box-shadow: 0 0 12px rgba(0, 255, 255, 0.5), 0 0 30px rgba(0, 200, 255, 0.2), 0 0 60px rgba(0, 150, 255, 0.1);
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+  }
+  53% {
+    box-shadow: 0 0 4px rgba(0, 255, 255, 0.15);
+    text-shadow: 0 0 2px rgba(0, 255, 255, 0.2);
+  }
+}
+
+/* ── Neon City: Status Bar Signal Interference ── */
+@keyframes nc-signal-interference {
+  0%, 100% { clip-path: inset(0); transform: none; }
+  8%  { clip-path: inset(0 0 60% 0); transform: translateX(2px); }
+  8.5%  { clip-path: inset(0); transform: none; }
+  42% { clip-path: inset(40% 0 0 0); transform: translateX(-1px); }
+  42.5% { clip-path: inset(0); transform: none; }
+  76% { clip-path: inset(20% 0 30% 0); transform: translateX(3px); }
+  76.5% { clip-path: inset(0); transform: none; }
+}
+
+/* ── Neon City: Header Fog Layer ── */
+@keyframes nc-header-fog {
+  0%   { background-position: -100% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ── Neon City: Settings Venetian Blind Open ── */
+@keyframes nc-venetian-blind {
+  0% {
+    opacity: 0;
+    clip-path: polygon(
+      0% 0%, 100% 0%, 100% 2%, 0% 2%,
+      0% 10%, 100% 10%, 100% 12%, 0% 12%,
+      0% 20%, 100% 20%, 100% 22%, 0% 22%,
+      0% 30%, 100% 30%, 100% 32%, 0% 32%,
+      0% 40%, 100% 40%, 100% 42%, 0% 42%,
+      0% 50%, 100% 50%, 100% 52%, 0% 52%,
+      0% 60%, 100% 60%, 100% 62%, 0% 62%,
+      0% 70%, 100% 70%, 100% 72%, 0% 72%,
+      0% 80%, 100% 80%, 100% 82%, 0% 82%,
+      0% 90%, 100% 90%, 100% 92%, 0% 92%
+    );
+    filter: brightness(2) saturate(1.5);
+  }
+  40% {
+    opacity: 1;
+    filter: brightness(1.3) saturate(1.2);
+  }
+  100% {
+    opacity: 1;
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+    filter: brightness(1) saturate(1);
+  }
+}
+
+/* ── Neon City: Progress Bar Neon Flow ── */
+@keyframes nc-neon-flow {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ── Solar Core: Keyframes ── */
+
+@keyframes solar-sweep {
+  0%   { transform: translateX(-200%) skewX(-20deg); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translateX(300%) skewX(-20deg); opacity: 0; }
+}
+
+@keyframes solar-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 4px rgba(255, 200, 0, 0.15),
+      0 0 8px rgba(232, 168, 0, 0.08);
+  }
+  50% {
+    box-shadow:
+      0 0 8px rgba(255, 200, 0, 0.3),
+      0 0 16px rgba(232, 168, 0, 0.15),
+      0 0 32px rgba(255, 200, 0, 0.06);
+  }
+}
+
+@keyframes solar-conduit {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes solar-charge {
+  0%   { opacity: 0.2; filter: brightness(0.8); }
+  80%  { opacity: 0.9; filter: brightness(1.1); }
+  100% { opacity: 1; filter: brightness(1); }
+}
+
+@keyframes solar-ember-rise-1 {
+  0%   { transform: translateY(0) scale(1); opacity: 0; }
+  8%   { opacity: 0.7; }
+  40%  { transform: translateY(-120px) translateX(10px) scale(1.3); opacity: 0.5; }
+  100% { transform: translateY(-250px) translateX(-8px) scale(0.4); opacity: 0; }
+}
+
+@keyframes solar-ember-rise-2 {
+  0%   { transform: translateY(0) scale(0.8); opacity: 0; }
+  10%  { opacity: 0.6; }
+  50%  { transform: translateY(-90px) translateX(-12px) scale(1.1); opacity: 0.4; }
+  100% { transform: translateY(-200px) translateX(6px) scale(0.3); opacity: 0; }
+}
+
+@keyframes solar-ember-rise-3 {
+  0%   { transform: translateY(0) scale(1.1); opacity: 0; }
+  6%   { opacity: 0.8; }
+  35%  { transform: translateY(-140px) translateX(16px) scale(1.5); opacity: 0.35; }
+  100% { transform: translateY(-280px) translateX(-10px) scale(0.2); opacity: 0; }
+}
+
+@keyframes solar-flare-glow {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+
+@keyframes solar-radiant-sweep {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* ── Solar Core: Background layers via #root pseudo-elements ── */
+
+/* ── Solar Core: Golden Heat Shimmer Waves ── */
+@keyframes solar-heat-shimmer {
+  0%, 100% { background-position: 20% 80%, 70% 30%, 50% 95%; filter: brightness(1); }
+  25%      { background-position: 30% 75%, 65% 40%, 45% 90%;  filter: brightness(1.02); }
+  50%      { background-position: 25% 85%, 75% 35%, 55% 92%;  filter: brightness(1); }
+  75%      { background-position: 22% 78%, 68% 32%, 48% 96%;  filter: brightness(1.01); }
+}
+
+/* ── Solar Core: Breathing Vignette + Core Radiance ── */
+@keyframes solar-vignette-breathe {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 0.75; }
+}
+
+/* ── Solar Core: Click Ripple Wave ── */
+@keyframes solar-ripple {
+  0%   { transform: scale(0); opacity: 0.35; }
+  100% { transform: scale(3); opacity: 0; }
+}
+
+/* ── Solar Core: Selected File Golden Breathing Border ── */
+@keyframes solar-border-breathe {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(255, 200, 0, 0.1), 0 0 15px rgba(232, 168, 0, 0.05);
+    border-color: rgba(232, 168, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(255, 200, 0, 0.2), 0 0 25px rgba(232, 168, 0, 0.08), 0 0 45px rgba(255, 200, 0, 0.03);
+    border-color: rgba(255, 200, 0, 0.5);
+  }
+}
+
+/* ── Solar Core: Folder Golden Light From Above ── */
+@keyframes solar-light-above {
+  0%, 100% { box-shadow: 0 -4px 12px rgba(255, 200, 0, 0.04); }
+  50%      { box-shadow: 0 -6px 20px rgba(255, 200, 0, 0.1), 0 -2px 8px rgba(255, 200, 0, 0.05); }
+}
+
+/* ── Solar Core: Scrollbar Lava Tube Glow ── */
+@keyframes solar-scrollbar-glow {
+  0%, 100% { box-shadow: 0 0 4px rgba(255, 200, 0, 0.15), 0 0 8px rgba(232, 168, 0, 0.08); }
+  50%      { box-shadow: 0 0 8px rgba(255, 200, 0, 0.25), 0 0 16px rgba(232, 168, 0, 0.12); }
+}
+
+/* ── Solar Core: Status Bar Golden Text Shimmer ── */
+@keyframes solar-text-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ── Solar Core: Settings Bloom Open ── */
+@keyframes solar-bloom-open {
+  0%   { opacity: 0; transform: scale(0.85); filter: brightness(1.5) blur(4px); }
+  60%  { opacity: 1; transform: scale(1.02); filter: brightness(1.1) blur(0); }
+  100% { opacity: 1; transform: scale(1); filter: brightness(1); }
+}
+
+/* ── Solar Core: Root element ambient styling ── */
+
+/* ── Solar Core: Slow Rotating Corona ── */
+@keyframes solar-corona-rotate {
+  from { transform: translate(-50%, 50%) rotate(0deg); }
+  to   { transform: translate(-50%, 50%) rotate(360deg); }
+}
+
+/* ═══════════════════════════════════════════
+   SHARED UTILITY CLASSES
+   ═══════════════════════════════════════════ */
+
+.glass-panel {
+  background: linear-gradient(135deg, rgba(22,22,22,0.95), rgba(10,10,10,0.98));
+  border: 1px solid var(--color-cyber-border);
+  backdrop-filter: blur(12px);
+}
+
+.glass-panel-hover:hover {
+  border-color: var(--color-neon-dark);
+  box-shadow: 0 0 15px var(--color-neon-glow), inset 0 0 15px rgba(0,0,0,0.5);
+}
+
+.neon-border {
+  border: 1px solid var(--color-neon-dark);
+  box-shadow: 0 0 5px var(--color-neon-glow), inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+.neon-text {
+  color: var(--color-neon-primary);
+  text-shadow: 0 0 7px var(--color-neon-glow), 0 0 15px var(--color-neon-glow);
+}
+
+.neon-glow {
+  box-shadow: 0 0 5px var(--color-neon-glow), 0 0 15px var(--color-neon-glow);
+}
+
+.cyber-button {
+  position: relative;
+  background: linear-gradient(120deg, rgba(255,45,149,0.18), rgba(255,212,0,0.10), rgba(255,45,149,0.18));
+  background-size: 220% 220%;
+  animation: neon-gradient-pan 6s ease infinite;
+  border: 1px solid var(--color-neon-dark);
+  color: var(--color-neon-bright);
+  font-family: var(--font-family-body);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: all var(--theme-transition-speed) ease;
+  overflow: hidden;
+}
+
+.cyber-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,227,77,0.25), transparent);
+  transition: left 0.4s ease;
+}
+
+.cyber-button:hover {
+  border-color: var(--color-neon-primary);
+  box-shadow: 0 0 10px var(--color-neon-glow), 0 0 22px var(--color-neon-glow), 0 0 30px var(--color-neon-yellow-glow);
+  background: linear-gradient(120deg, rgba(255,45,149,0.32), rgba(255,212,0,0.20), rgba(255,45,149,0.32));
+  background-size: 220% 220%;
+}
+
+.cyber-button:hover::before {
+  left: 100%;
+}
+
+.cyber-button:active {
+  transform: scale(0.97);
+  box-shadow: 0 0 15px var(--color-neon-glow), 0 0 30px var(--color-neon-glow), inset 0 0 12px var(--color-neon-yellow-glow);
+}
+
+.grid-overlay {
+  background-image:
+    linear-gradient(rgba(255,45,149,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,212,0,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.carbon-texture {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(255,255,255,0.01) 2px,
+    rgba(255,255,255,0.01) 4px
+  );
+}
+
+/* HUD corner brackets (cyberpunk only, hidden in biotech) */
+.hud-bracket {
+  position: relative;
+}
+.hud-bracket::before,
+.hud-bracket::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--color-neon-dark);
+}
+.hud-bracket::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid;
+  border-left: 2px solid;
+}
+.hud-bracket::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 2px solid;
+  border-right: 2px solid;
+}
+
+/* ═══════════════════════════════════════════
+   BIOTECH UTILITY CLASSES
+   ═══════════════════════════════════════════ */
+
+.bio-glow-soft {
+  box-shadow:
+    0 0 8px var(--color-neon-glow),
+    0 0 24px var(--color-neon-glow),
+    inset 0 0 12px rgba(0, 230, 118, 0.06);
+}
+
+.bio-breathe {
+  animation: bio-breathe 4s ease-in-out infinite;
+}
+
+.bio-flow-gradient {
+  background-size: 200% 200%;
+  animation: bio-flow 20s ease infinite;
+}
+
+.bio-membrane {
+  background: linear-gradient(165deg, rgba(13,31,16,0.92), rgba(6,13,6,0.96));
+  border: 1px solid var(--color-cyber-border);
+  border-radius: var(--theme-radius);
+  backdrop-filter: blur(16px) saturate(1.2);
+}
+
+.bio-luminous-edge {
+  position: relative;
+}
+.bio-luminous-edge::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-neon-primary), transparent);
+  opacity: 0.4;
+}
+
+/* ═══════════════════════════════════════════
+   COMMAND UTILITY CLASSES
+   ═══════════════════════════════════════════ */
+
+.cmd-glow-precise {
+  box-shadow:
+    0 0 6px var(--color-neon-glow),
+    0 0 12px var(--color-neon-glow);
+}
+
+.cmd-pulse {
+  animation: cmd-pulse 3s ease-in-out infinite;
+}
+
+.cmd-scan-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.cmd-scan-sweep::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(33,150,243,0.08), transparent);
+  animation: cmd-scan 2.5s linear infinite;
+}
+
+.cmd-holographic-edge {
+  position: relative;
+}
+.cmd-holographic-edge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(13, 71, 161, 0.3),
+    rgba(33, 150, 243, 0.5),
+    rgba(100, 181, 246, 0.3),
+    transparent
+  );
+}
+
+.cmd-coordinate-grid {
+  background-image:
+    linear-gradient(rgba(33,150,243,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(33,150,243,0.03) 1px, transparent 1px);
+  background-size: 80px 80px;
+}
+
+/* ═══════════════════════════════════════════
+   PERFORMANCE: Narrowed transitions
+   ═══════════════════════════════════════════ */
+
+/* Replace transition-all on file cards and interactive elements
+   with specific properties to reduce compositor work during scroll */
+.file-card-base {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NEW KEYFRAMES — 100+ Cyberpunk / UI Animations
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── 1. Glitch & Distortion ─────────────────────────────────── */
+
+@keyframes glitch-horizontal {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-3px); }
+  20% { transform: translateX(3px); }
+  30% { transform: translateX(-2px); }
+  40% { transform: translateX(2px); }
+  50% { transform: translateX(0); }
+}
+
+@keyframes glitch-vertical {
+  0%, 100% { transform: translateY(0); }
+  15% { transform: translateY(-2px); }
+  35% { transform: translateY(3px); }
+  55% { transform: translateY(-1px); }
+  75% { transform: translateY(2px); }
+}
+
+@keyframes glitch-skew {
+  0%, 100% { transform: skewX(0deg); }
+  20% { transform: skewX(-2deg); }
+  40% { transform: skewX(3deg); }
+  60% { transform: skewX(-1deg); }
+  80% { transform: skewX(1.5deg); }
+}
+
+@keyframes glitch-clip {
+  0% { clip-path: inset(0 0 95% 0); }
+  10% { clip-path: inset(40% 0 30% 0); }
+  20% { clip-path: inset(80% 0 0 0); }
+  30% { clip-path: inset(10% 0 70% 0); }
+  40% { clip-path: inset(60% 0 10% 0); }
+  50% { clip-path: inset(0 0 50% 0); }
+  60% { clip-path: inset(30% 0 40% 0); }
+  70% { clip-path: inset(90% 0 5% 0); }
+  80% { clip-path: inset(5% 0 85% 0); }
+  90% { clip-path: inset(50% 0 20% 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes glitch-color-split {
+  0%, 100% { text-shadow: 0 0 0 transparent; }
+  25% { text-shadow: -2px 0 #ff0040, 2px 0 #00ffff; }
+  50% { text-shadow: 2px 0 #ff0040, -2px 0 #00ffff; }
+  75% { text-shadow: -1px 0 #ff0040, 1px 0 #00ffff; }
+}
+
+@keyframes glitch-noise {
+  0% { transform: translate(0, 0); }
+  10% { transform: translate(-1px, 2px); }
+  20% { transform: translate(2px, -1px); }
+  30% { transform: translate(-2px, 1px); }
+  40% { transform: translate(1px, -2px); }
+  50% { transform: translate(-1px, -1px); }
+  60% { transform: translate(2px, 2px); }
+  70% { transform: translate(-2px, -2px); }
+  80% { transform: translate(1px, 1px); }
+  90% { transform: translate(-1px, 2px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes glitch-dissolve {
+  0% { opacity: 1; filter: none; transform: scale(1); }
+  30% { opacity: 0.8; filter: blur(1px); transform: scale(1.01) skewX(-1deg); }
+  60% { opacity: 0.4; filter: blur(3px); transform: scale(0.98) skewX(2deg); }
+  100% { opacity: 0; filter: blur(8px); transform: scale(0.9) skewX(-3deg); }
+}
+
+@keyframes glitch-assemble {
+  0% { opacity: 0; filter: blur(8px); transform: scale(1.1) skewX(3deg); }
+  40% { opacity: 0.5; filter: blur(2px); transform: scale(0.99) skewX(-1deg); }
+  70% { opacity: 0.9; filter: blur(0.5px); transform: scale(1.01) skewX(0.5deg); }
+  100% { opacity: 1; filter: none; transform: scale(1) skewX(0); }
+}
+
+@keyframes glitch-tear {
+  0%, 100% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+  25% { clip-path: polygon(0 0, 100% 0, 98% 45%, 100% 46%, 97% 100%, 0 100%, 2% 46%, 0 45%); }
+  50% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+  75% { clip-path: polygon(0 0, 100% 0, 100% 30%, 98% 31%, 100% 32%, 100% 100%, 0 100%, 0 32%, 2% 31%, 0 30%); }
+}
+
+/* ── 2. Neon & Glow Effects ─────────────────────────────────── */
+
+@keyframes neon-breathe {
+  0%, 100% { text-shadow: 0 0 4px currentColor, 0 0 11px currentColor; }
+  50% { text-shadow: 0 0 8px currentColor, 0 0 20px currentColor, 0 0 40px currentColor; }
+}
+
+@keyframes neon-strobe {
+  0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
+  20%, 24%, 55% { opacity: 0.4; }
+}
+
+@keyframes neon-trace {
+  0% { stroke-dashoffset: 100%; }
+  100% { stroke-dashoffset: 0%; }
+}
+
+@keyframes neon-glow-pulse {
+  0%, 100% { box-shadow: 0 0 5px var(--color-neon-glow), 0 0 10px var(--color-neon-glow); }
+  50% { box-shadow: 0 0 15px var(--color-neon-glow), 0 0 30px var(--color-neon-glow), 0 0 45px var(--color-neon-glow); }
+}
+
+@keyframes neon-border-run {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes neon-text-reveal {
+  0% { width: 0; opacity: 0; }
+  10% { opacity: 1; }
+  100% { width: 100%; opacity: 1; }
+}
+
+@keyframes neon-wipe-left {
+  0% { transform: translateX(-100%); opacity: 0.8; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes neon-wipe-right {
+  0% { transform: translateX(100%); opacity: 0.8; }
+  100% { transform: translateX(-100%); opacity: 0; }
+}
+
+@keyframes neon-ring-expand {
+  0% { transform: scale(0.5); opacity: 1; box-shadow: 0 0 20px currentColor; }
+  100% { transform: scale(2.5); opacity: 0; box-shadow: 0 0 0 currentColor; }
+}
+
+@keyframes neon-double-pulse {
+  0%, 100% { box-shadow: 0 0 8px currentColor; }
+  25% { box-shadow: 0 0 20px currentColor, 0 0 40px currentColor; }
+  50% { box-shadow: 0 0 8px currentColor; }
+  75% { box-shadow: 0 0 15px currentColor, 0 0 30px currentColor; }
+}
+
+/* ── 3. Scan & Sweep ────────────────────────────────────────── */
+
+@keyframes scan-down {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes scan-up {
+  0% { transform: translateY(100vh); }
+  100% { transform: translateY(-100%); }
+}
+
+@keyframes scan-left {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+@keyframes scan-right {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes scan-diagonal {
+  0% { transform: translate(-100%, -100%) rotate(45deg); }
+  100% { transform: translate(100%, 100%) rotate(45deg); }
+}
+
+@keyframes radar-sweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes hud-scan-pulse {
+  0% { transform: scaleX(0); opacity: 1; }
+  50% { transform: scaleX(1); opacity: 0.6; }
+  100% { transform: scaleX(0); opacity: 0; }
+}
+
+@keyframes data-scan-line {
+  0% { top: 0; opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+@keyframes sweep-spotlight {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes grid-reveal {
+  0% { clip-path: circle(0% at 50% 50%); }
+  100% { clip-path: circle(75% at 50% 50%); }
+}
+
+/* ── 4. Pulse & Beat ────────────────────────────────────────── */
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  14% { transform: scale(1.1); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.08); }
+  56% { transform: scale(1); }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.5; }
+}
+
+@keyframes triple-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 currentColor; }
+  33% { box-shadow: 0 0 0 4px transparent, 0 0 0 8px currentColor; }
+  66% { box-shadow: 0 0 0 8px transparent, 0 0 0 12px currentColor; }
+}
+
+@keyframes pulse-fade {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+@keyframes beacon {
+  0% { box-shadow: 0 0 0 0 currentColor; }
+  70% { box-shadow: 0 0 0 15px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+@keyframes alert-pulse {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: rgba(255, 0, 64, 0.08); }
+}
+
+@keyframes status-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0.3; }
+}
+
+/* ── 5. Entrance & Exit ─────────────────────────────────────── */
+
+@keyframes slide-in-right {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes slide-in-left {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes slide-in-up {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes slide-in-down {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes scale-in {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes scale-out {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.5); opacity: 0; }
+}
+
+@keyframes fade-in-blur {
+  0% { opacity: 0; filter: blur(8px); }
+  100% { opacity: 1; filter: blur(0); }
+}
+
+@keyframes fade-out-blur {
+  0% { opacity: 1; filter: blur(0); }
+  100% { opacity: 0; filter: blur(8px); }
+}
+
+@keyframes pop-in {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes pop-out {
+  0% { transform: scale(1); opacity: 1; }
+  30% { transform: scale(1.05); }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+@keyframes drop-in {
+  0% { transform: translateY(-50px) scaleY(0.8); opacity: 0; }
+  60% { transform: translateY(5px) scaleY(1.02); opacity: 1; }
+  100% { transform: translateY(0) scaleY(1); opacity: 1; }
+}
+
+@keyframes fly-out-top {
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-60px); opacity: 0; }
+}
+
+@keyframes materialize {
+  0% { opacity: 0; transform: scale(0.95); filter: blur(4px) brightness(2); }
+  50% { opacity: 0.8; filter: blur(1px) brightness(1.3); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0) brightness(1); }
+}
+
+@keyframes dematerialize {
+  0% { opacity: 1; transform: scale(1); filter: blur(0) brightness(1); }
+  50% { opacity: 0.5; filter: blur(2px) brightness(1.5); }
+  100% { opacity: 0; transform: scale(1.05); filter: blur(8px) brightness(2); }
+}
+
+@keyframes hologram-in {
+  0% { clip-path: inset(100% 0 0 0); opacity: 0; filter: hue-rotate(90deg); }
+  50% { clip-path: inset(50% 0 0 0); opacity: 0.7; filter: hue-rotate(45deg); }
+  100% { clip-path: inset(0 0 0 0); opacity: 1; filter: hue-rotate(0deg); }
+}
+
+@keyframes hologram-out {
+  0% { clip-path: inset(0 0 0 0); opacity: 1; filter: hue-rotate(0deg); }
+  50% { clip-path: inset(0 0 50% 0); opacity: 0.6; filter: hue-rotate(45deg); }
+  100% { clip-path: inset(0 0 100% 0); opacity: 0; filter: hue-rotate(90deg); }
+}
+
+/* ── 6. Rotation & Spin ─────────────────────────────────────── */
+
+@keyframes spin-slow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes spin-reverse {
+  0% { transform: rotate(360deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes spin-bounce {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(100deg); }
+  50% { transform: rotate(90deg); }
+  75% { transform: rotate(370deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes orbit {
+  0% { transform: rotate(0deg) translateX(20px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(20px) rotate(-360deg); }
+}
+
+@keyframes wobble {
+  0%, 100% { transform: rotate(0deg); }
+  15% { transform: rotate(-5deg); }
+  30% { transform: rotate(4deg); }
+  45% { transform: rotate(-3deg); }
+  60% { transform: rotate(2deg); }
+  75% { transform: rotate(-1deg); }
+}
+
+/* ── 7. Cyber UI Elements ───────────────────────────────────── */
+
+@keyframes loading-bar {
+  0% { width: 0%; }
+  50% { width: 70%; }
+  100% { width: 100%; }
+}
+
+@keyframes progress-stripe {
+  0% { background-position: 0 0; }
+  100% { background-position: 40px 0; }
+}
+
+@keyframes cursor-blink {
+  0%, 49% { border-right-color: currentColor; }
+  50%, 100% { border-right-color: transparent; }
+}
+
+@keyframes typing-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes terminal-line {
+  0% { width: 0; }
+  100% { width: 100%; }
+}
+
+@keyframes hud-corner-flash {
+  0%, 100% { border-color: transparent; }
+  50% { border-color: currentColor; }
+}
+
+@keyframes bracket-open {
+  0% { transform: scaleX(0); opacity: 0; }
+  100% { transform: scaleX(1); opacity: 1; }
+}
+
+@keyframes crosshair-lock {
+  0% { transform: scale(2); opacity: 0; }
+  50% { transform: scale(0.9); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes hud-flicker-bar {
+  0%, 100% { opacity: 0.6; transform: scaleX(1); }
+  33% { opacity: 1; transform: scaleX(0.98); }
+  66% { opacity: 0.8; transform: scaleX(1.02); }
+}
+
+@keyframes data-stream-char {
+  0% { content: "0"; opacity: 0.3; }
+  25% { content: "1"; opacity: 0.6; }
+  50% { content: "0"; opacity: 1; }
+  75% { content: "1"; opacity: 0.6; }
+  100% { content: "0"; opacity: 0.3; }
+}
+
+@keyframes lock-engage {
+  0% { transform: translateY(-5px); opacity: 0; }
+  50% { transform: translateY(2px); opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes shield-activate {
+  0% { clip-path: circle(0% at 50% 50%); opacity: 0; }
+  50% { clip-path: circle(60% at 50% 50%); opacity: 1; }
+  100% { clip-path: circle(100% at 50% 50%); opacity: 1; }
+}
+
+/* ── 8. Particle & Ambient ──────────────────────────────────── */
+
+@keyframes float-up {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-60px) scale(0.5); opacity: 0; }
+}
+
+@keyframes float-down {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(60px) scale(0.5); opacity: 0; }
+}
+
+@keyframes drift-horizontal {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(15px); }
+}
+
+@keyframes drift-vertical {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(10px); }
+}
+
+@keyframes dust-float {
+  0% { transform: translate(0, 0) scale(0); opacity: 0; }
+  20% { opacity: 0.6; transform: scale(1); }
+  80% { opacity: 0.3; }
+  100% { transform: translate(30px, -40px) scale(0.5); opacity: 0; }
+}
+
+@keyframes spark-scatter {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--sx, 20px), var(--sy, -30px)) scale(0); opacity: 0; }
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes smoke-rise {
+  0% { transform: translateY(0) scale(1); opacity: 0.4; filter: blur(2px); }
+  100% { transform: translateY(-80px) scale(2); opacity: 0; filter: blur(8px); }
+}
+
+@keyframes energy-orb {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 10px currentColor; }
+  50% { transform: scale(1.2); box-shadow: 0 0 25px currentColor, 0 0 50px currentColor; }
+}
+
+@keyframes lightning-flash {
+  0%, 100% { opacity: 0; }
+  5% { opacity: 1; }
+  10% { opacity: 0; }
+  15% { opacity: 0.8; }
+  20% { opacity: 0; }
+}
+
+/* ── 9. Text Effects ────────────────────────────────────────── */
+
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes text-scramble {
+  0% { opacity: 0; filter: blur(4px); }
+  30% { opacity: 0.5; filter: blur(2px); letter-spacing: 4px; }
+  60% { opacity: 0.8; filter: blur(0.5px); letter-spacing: 1px; }
+  100% { opacity: 1; filter: blur(0); letter-spacing: normal; }
+}
+
+@keyframes text-flicker-in {
+  0% { opacity: 0; }
+  10% { opacity: 0; }
+  10.1% { opacity: 1; }
+  10.2% { opacity: 0; }
+  20% { opacity: 0; }
+  20.1% { opacity: 1; }
+  20.6% { opacity: 0; }
+  30% { opacity: 0; }
+  30.1% { opacity: 1; }
+  30.5% { opacity: 1; }
+  30.6% { opacity: 0; }
+  45% { opacity: 0; }
+  45.1% { opacity: 1; }
+  50% { opacity: 1; }
+  55% { opacity: 1; }
+  55.1% { opacity: 0; }
+  57% { opacity: 0; }
+  57.1% { opacity: 1; }
+  60% { opacity: 1; }
+  60.1% { opacity: 0; }
+  65% { opacity: 0; }
+  65.1% { opacity: 1; }
+  75% { opacity: 1; }
+  75.1% { opacity: 0; }
+  77% { opacity: 0; }
+  77.1% { opacity: 1; }
+  85% { opacity: 1; }
+  85.1% { opacity: 0; }
+  86% { opacity: 0; }
+  86.1% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+@keyframes text-shadow-pop {
+  0% { text-shadow: 0 0 0 transparent; transform: translateY(0); }
+  50% { text-shadow: 0 4px 8px rgba(0,0,0,0.3); transform: translateY(-2px); }
+  100% { text-shadow: 0 0 0 transparent; transform: translateY(0); }
+}
+
+@keyframes text-wave {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes text-redact {
+  0% { background-size: 0% 100%; }
+  100% { background-size: 100% 100%; }
+}
+
+@keyframes letter-spacing-in {
+  0% { letter-spacing: 20px; opacity: 0; }
+  100% { letter-spacing: normal; opacity: 1; }
+}
+
+/* ── 10. Background & Pattern ───────────────────────────────── */
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes noise-scroll {
+  0% { transform: translate(0, 0); }
+  10% { transform: translate(-5%, -5%); }
+  20% { transform: translate(-10%, 5%); }
+  30% { transform: translate(5%, -10%); }
+  40% { transform: translate(-5%, 15%); }
+  50% { transform: translate(-10%, 5%); }
+  60% { transform: translate(15%, 0); }
+  70% { transform: translate(0, 10%); }
+  80% { transform: translate(-15%, 0); }
+  90% { transform: translate(10%, 5%); }
+  100% { transform: translate(5%, 0); }
+}
+
+@keyframes matrix-rain {
+  0% { transform: translateY(-100%); opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+@keyframes hex-grid-pulse {
+  0%, 100% { opacity: 0.03; }
+  50% { opacity: 0.08; }
+}
+
+@keyframes circuit-trace {
+  0% { stroke-dashoffset: 1000; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes static-noise {
+  0%, 100% { background-position: 0 0; }
+  25% { background-position: -5px 3px; }
+  50% { background-position: 3px -5px; }
+  75% { background-position: -3px -3px; }
+}
+
+@keyframes plasma-flow {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+@keyframes warp-grid {
+  0%, 100% { transform: perspective(500px) rotateX(0deg); }
+  50% { transform: perspective(500px) rotateX(2deg); }
+}
+
+/* ── 11. Border & Outline ───────────────────────────────────── */
+
+@keyframes border-trace-clockwise {
+  0% { clip-path: inset(0 100% 100% 0); }
+  25% { clip-path: inset(0 0 100% 0); }
+  50% { clip-path: inset(0 0 0 0); }
+  75% { clip-path: inset(0 0 0 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes border-dash-march {
+  0% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -30; }
+}
+
+@keyframes border-glow-rotate {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 200%; }
+}
+
+@keyframes outline-expand {
+  0% { outline-offset: 0px; outline-color: currentColor; }
+  100% { outline-offset: 6px; outline-color: transparent; }
+}
+
+@keyframes corner-accent-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* ── 12. Transform & Motion ─────────────────────────────────── */
+
+@keyframes bounce-in {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.08); opacity: 1; }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+@keyframes bounce-out {
+  0% { transform: scale(1); opacity: 1; }
+  20% { transform: scale(1.1); }
+  100% { transform: scale(0.3); opacity: 0; }
+}
+
+@keyframes elastic-in {
+  0% { transform: scaleX(0); }
+  55% { transform: scaleX(1.08); }
+  65% { transform: scaleX(0.95); }
+  80% { transform: scaleX(1.02); }
+  100% { transform: scaleX(1); }
+}
+
+@keyframes rubber-band {
+  0% { transform: scale(1); }
+  30% { transform: scaleX(1.25) scaleY(0.75); }
+  40% { transform: scaleX(0.75) scaleY(1.25); }
+  50% { transform: scaleX(1.15) scaleY(0.85); }
+  65% { transform: scaleX(0.95) scaleY(1.05); }
+  75% { transform: scaleX(1.05) scaleY(0.95); }
+  100% { transform: scale(1); }
+}
+
+@keyframes flip-in-x {
+  0% { transform: perspective(400px) rotateX(90deg); opacity: 0; }
+  40% { transform: perspective(400px) rotateX(-15deg); }
+  70% { transform: perspective(400px) rotateX(10deg); }
+  100% { transform: perspective(400px) rotateX(0); opacity: 1; }
+}
+
+@keyframes flip-in-y {
+  0% { transform: perspective(400px) rotateY(90deg); opacity: 0; }
+  40% { transform: perspective(400px) rotateY(-15deg); }
+  70% { transform: perspective(400px) rotateY(10deg); }
+  100% { transform: perspective(400px) rotateY(0); opacity: 1; }
+}
+
+@keyframes zoom-in-rotate {
+  0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes shake-x {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+@keyframes shake-y {
+  0%, 100% { transform: translateY(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateY(-4px); }
+  20%, 40%, 60%, 80% { transform: translateY(4px); }
+}
+
+@keyframes jello {
+  0%, 100% { transform: none; }
+  11.1% { transform: skewX(-2deg) skewY(-2deg); }
+  22.2% { transform: skewX(1.5deg) skewY(1.5deg); }
+  33.3% { transform: skewX(-1deg) skewY(-1deg); }
+  44.4% { transform: skewX(0.6deg) skewY(0.6deg); }
+  55.5% { transform: skewX(-0.3deg) skewY(-0.3deg); }
+}
+
+/* ── 13. Reveal & Mask ──────────────────────────────────────── */
+
+@keyframes wipe-in-right {
+  0% { clip-path: inset(0 100% 0 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes wipe-in-left {
+  0% { clip-path: inset(0 0 0 100%); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes wipe-in-down {
+  0% { clip-path: inset(0 0 100% 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes wipe-in-up {
+  0% { clip-path: inset(100% 0 0 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes diamond-reveal {
+  0% { clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%); }
+  100% { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
+}
+
+@keyframes circle-reveal {
+  0% { clip-path: circle(0% at 50% 50%); }
+  100% { clip-path: circle(100% at 50% 50%); }
+}
+
+@keyframes iris-open {
+  0% { clip-path: circle(0% at 50% 50%); opacity: 0; }
+  100% { clip-path: circle(75% at 50% 50%); opacity: 1; }
+}
+
+@keyframes iris-close {
+  0% { clip-path: circle(75% at 50% 50%); opacity: 1; }
+  100% { clip-path: circle(0% at 50% 50%); opacity: 0; }
+}
+
+@keyframes shutter-open {
+  0% { clip-path: inset(50% 0 50% 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes shutter-close {
+  0% { clip-path: inset(0 0 0 0); }
+  100% { clip-path: inset(50% 0 50% 0); }
+}
+
+/* ── 14. Color & Filter ─────────────────────────────────────── */
+
+@keyframes color-cycle {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+@keyframes desaturate-in {
+  0% { filter: grayscale(100%); }
+  100% { filter: grayscale(0%); }
+}
+
+@keyframes invert-flash {
+  0%, 100% { filter: invert(0); }
+  50% { filter: invert(1); }
+}
+
+@keyframes brightness-pulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.4); }
+}
+
+@keyframes contrast-shift {
+  0%, 100% { filter: contrast(1); }
+  50% { filter: contrast(1.3); }
+}
+
+@keyframes sepia-fade {
+  0% { filter: sepia(100%); opacity: 0.6; }
+  100% { filter: sepia(0%); opacity: 1; }
+}
+
+@keyframes thermal-vision {
+  0% { filter: hue-rotate(0deg) saturate(3); }
+  50% { filter: hue-rotate(60deg) saturate(5); }
+  100% { filter: hue-rotate(0deg) saturate(3); }
+}
+
+@keyframes night-vision {
+  0%, 100% { filter: brightness(1.2) contrast(1.1) hue-rotate(80deg); }
+  50% { filter: brightness(1.4) contrast(1.2) hue-rotate(80deg); }
+}
+
+/* ── 15. Misc / Utility ─────────────────────────────────────── */
+
+@keyframes countdown-shrink {
+  0% { transform: scaleX(1); }
+  100% { transform: scaleX(0); }
+}
+
+@keyframes expand-width {
+  0% { max-width: 0; opacity: 0; }
+  100% { max-width: 500px; opacity: 1; }
+}
+
+@keyframes collapse-width {
+  0% { max-width: 500px; opacity: 1; }
+  100% { max-width: 0; opacity: 0; }
+}
+
+@keyframes accordion-open {
+  0% { max-height: 0; opacity: 0; }
+  100% { max-height: 500px; opacity: 1; }
+}
+
+@keyframes accordion-close {
+  0% { max-height: 500px; opacity: 1; }
+  100% { max-height: 0; opacity: 0; }
+}
+
+@keyframes pendulum {
+  0% { transform: rotate(15deg); }
+  50% { transform: rotate(-15deg); }
+  100% { transform: rotate(15deg); }
+}
+
+@keyframes hover-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes ripple-out {
+  0% { box-shadow: 0 0 0 0 currentColor; }
+  100% { box-shadow: 0 0 0 20px transparent; }
+}
+
+@keyframes electricity {
+  0%, 100% { clip-path: polygon(0 45%, 15% 44%, 30% 50%, 45% 42%, 60% 48%, 75% 43%, 90% 50%, 100% 44%, 100% 56%, 90% 50%, 75% 57%, 60% 52%, 45% 58%, 30% 50%, 15% 56%, 0 55%); }
+  25% { clip-path: polygon(0 48%, 15% 42%, 30% 47%, 45% 55%, 60% 44%, 75% 50%, 90% 43%, 100% 48%, 100% 52%, 90% 57%, 75% 50%, 60% 56%, 45% 45%, 30% 53%, 15% 58%, 0 52%); }
+  50% { clip-path: polygon(0 43%, 15% 50%, 30% 44%, 45% 48%, 60% 55%, 75% 45%, 90% 52%, 100% 46%, 100% 54%, 90% 48%, 75% 55%, 60% 45%, 45% 52%, 30% 56%, 15% 50%, 0 57%); }
+  75% { clip-path: polygon(0 50%, 15% 45%, 30% 52%, 45% 44%, 60% 50%, 75% 56%, 90% 46%, 100% 50%, 100% 50%, 90% 54%, 75% 44%, 60% 50%, 45% 56%, 30% 48%, 15% 55%, 0 50%); }
+}
+
+@keyframes cyber-grid-zoom {
+  0% { background-size: 20px 20px; opacity: 0.05; }
+  50% { background-size: 40px 40px; opacity: 0.1; }
+  100% { background-size: 20px 20px; opacity: 0.05; }
+}
+
+@keyframes signal-bars {
+  0% { height: 20%; }
+  25% { height: 60%; }
+  50% { height: 100%; }
+  75% { height: 40%; }
+  100% { height: 20%; }
+}
+
+@keyframes decrypt-reveal {
+  0% { filter: blur(6px) brightness(2); letter-spacing: 8px; }
+  40% { filter: blur(2px) brightness(1.5); letter-spacing: 3px; }
+  70% { filter: blur(0.5px) brightness(1.1); letter-spacing: 1px; }
+  100% { filter: blur(0) brightness(1); letter-spacing: normal; }
+}
+
+@keyframes hex-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(60deg); }
+}
+
+@keyframes data-corruption {
+  0%, 100% { transform: none; filter: none; }
+  10% { transform: translateX(2px) skewX(5deg); filter: hue-rotate(90deg); }
+  20% { transform: translateX(-3px) skewX(-3deg); filter: saturate(3); }
+  30% { transform: translateX(1px); filter: none; }
+  40% { transform: translateX(-1px) skewX(2deg); filter: hue-rotate(180deg); }
+  50% { transform: none; filter: none; }
+}
+
+/* ── Kawaii: Keyframes ── */
+
+@keyframes kawaii-heartbeat {
+  0%, 100% { transform: scale(1); }
+  14%      { transform: scale(1.08); }
+  28%      { transform: scale(1); }
+  42%      { transform: scale(1.06); }
+  56%      { transform: scale(1); }
+}
+
+@keyframes kawaii-dream-drift {
+  0%, 100% { background-position: 15% 85%, 80% 20%, 50% 50%; filter: brightness(1); }
+  33%      { background-position: 25% 75%, 70% 30%, 55% 45%; filter: brightness(1.04); }
+  66%      { background-position: 18% 80%, 75% 28%, 45% 55%; filter: brightness(1.02); }
+}
+
+@keyframes kawaii-shine-sweep {
+  0%   { transform: translateX(-150%) skewX(-15deg); opacity: 0; }
+  15%  { opacity: 0.8; }
+  100% { transform: translateX(250%) skewX(-15deg); opacity: 0; }
+}
+
+@keyframes kawaii-petal-fall-1 {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+  10%  { opacity: 0.7; }
+  100% { transform: translateY(220px) translateX(30px) rotate(180deg); opacity: 0; }
+}
+
+@keyframes kawaii-petal-fall-2 {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+  12%  { opacity: 0.6; }
+  100% { transform: translateY(180px) translateX(-25px) rotate(-150deg); opacity: 0; }
+}
+
+@keyframes kawaii-petal-fall-3 {
+  0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 0; }
+  8%   { opacity: 0.8; }
+  100% { transform: translateY(260px) translateX(15px) rotate(220deg) scale(0.7); opacity: 0; }
+}
+
+@keyframes kawaii-twinkle {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%      { opacity: 1; transform: scale(1.25); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NEON THEME — black · pink · yellow
+   Animated gradients, glowing text, click & drag effects
+   ═══════════════════════════════════════════════════════════ */
+
+/* Animated gradient panning (used by buttons & gradient text) */
+@keyframes neon-gradient-pan {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Pulsing neon glow for text */
+@keyframes neon-text-pulse {
+  0%, 100% {
+    text-shadow: 0 0 6px var(--color-neon-glow), 0 0 14px var(--color-neon-glow), 0 0 26px var(--color-neon-yellow-glow);
+  }
+  50% {
+    text-shadow: 0 0 10px var(--color-neon-bright), 0 0 24px var(--color-neon-glow), 0 0 44px var(--color-neon-yellow-glow);
+  }
+}
+
+/* Slow drift for the big background letters */
+@keyframes neon-bg-drift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(0, -18px, 0) scale(1.04); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+/* Occasional neon sign flicker */
+@keyframes neon-sign-flicker {
+  0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
+  20%, 24%, 55% { opacity: 0.35; }
+}
+
+/* Expanding ring left behind by a click / drag */
+@keyframes neon-click-ring {
+  0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+@keyframes neon-spark-fly {
+  0%   { transform: translate(-50%, -50%) translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) translate(var(--sx), var(--sy)) scale(0); opacity: 0; }
+}
+
+/* The app body — subtle radial pink/yellow wash over black */
+body {
+  background:
+    radial-gradient(1200px 800px at 15% 0%, rgba(255, 45, 149, 0.10), transparent 60%),
+    radial-gradient(1000px 700px at 85% 100%, rgba(255, 212, 0, 0.07), transparent 60%),
+    var(--color-cyber-black);
+}
+
+/* Glowing animated neon text */
+.neon-text {
+  color: var(--color-neon-bright);
+  animation: neon-text-pulse 3.2s ease-in-out infinite;
+}
+
+/* Gradient pink→yellow text (used for headings / brand) */
+.neon-gradient-text {
+  background: linear-gradient(100deg, var(--color-neon-primary), var(--color-neon-yellow), var(--color-neon-bright));
+  background-size: 220% 220%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: neon-gradient-pan 5s ease infinite;
+  filter: drop-shadow(0 0 10px var(--color-neon-glow));
+}
+
+/* ── Animated neon glowing background text layer ── */
+.neon-bg-text-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.neon-bg-word {
+  position: absolute;
+  font-family: var(--font-family-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(255, 45, 149, 0.35);
+  text-shadow: 0 0 18px var(--color-neon-glow), 0 0 40px var(--color-neon-yellow-glow);
+  will-change: transform, opacity;
+  animation: neon-bg-drift 14s ease-in-out infinite, neon-sign-flicker 7s steps(1) infinite;
+}
+
+.neon-bg-word.solid {
+  color: rgba(255, 45, 149, 0.10);
+  -webkit-text-stroke: 0;
+}
+
+/* ── Neon scrollbar ── */
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(var(--color-neon-primary), var(--color-neon-yellow));
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(var(--color-neon-bright), var(--color-neon-yellow-bright));
+}
+
+::selection {
+  background: var(--color-neon-primary);
+  color: #07050a;
+}
+
+/* ── Global click / drag burst overlay ── */
+.neon-fx-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+}
+
+.neon-click-ring {
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  border-radius: 9999px;
+  border: 2px solid var(--color-neon-bright);
+  box-shadow: 0 0 18px var(--color-neon-glow), inset 0 0 12px var(--color-neon-yellow-glow);
+  animation: neon-click-ring 0.6s ease-out forwards;
+}
+
+.neon-spark {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--color-neon-yellow-bright);
+  box-shadow: 0 0 8px var(--color-neon-yellow-glow);
+  animation: neon-spark-fly 0.6s ease-out forwards;
+}
+
+/* Neon cursor-drag trail dot */
+.neon-drag-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, var(--color-neon-bright), var(--color-neon-primary) 60%, transparent 70%);
+  box-shadow: 0 0 12px var(--color-neon-glow);
+  transform: translate(-50%, -50%);
+  opacity: 0.85;
+  transition: opacity 0.4s ease;
+}

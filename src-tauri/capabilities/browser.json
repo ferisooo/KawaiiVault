@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "vaultbrowser",
+  "description": "Minimal capability for the private browser window: the injected media scanner may emit ONE-way events back to the app. No filesystem, dialog, or vault command access is granted to the untrusted web content.",
+  "windows": ["vaultbrowser"],
+  "permissions": ["core:event:allow-emit"]
+}
