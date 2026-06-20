@@ -17,7 +17,7 @@ REM ===========================================================================
 
 set "BASE=%~dp0"
 set "TARGET=%BASE%CyberVault"
-set "REPO=https://github.com/ferisooo/CyberVault.git"
+set "REPO=https://github.com/ferisooo/Kawaii-Vault.git"
 
 REM --- Safety guard: refuse to run from inside the repo itself ---
 if exist "%BASE%package.json" (
