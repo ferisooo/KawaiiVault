@@ -1221,7 +1221,7 @@ fn import_browser_download(app: tauri::AppHandle, path: std::path::PathBuf) {
         .map(|n| n.to_string_lossy().to_string())
         .unwrap_or_else(|| "download".to_string());
 
-    let imported = (|| -> Result<usize, String> {
+    let imported = (|| -> Result<Vec<String>, String> {
         let state = app.state::<AppState>();
         // Suppress auto-lock while the import runs (same as manual imports).
         let _busy = BusyGuard::new(&state.busy_ops);
@@ -1232,11 +1232,13 @@ fn import_browser_download(app: tauri::AppHandle, path: std::path::PathBuf) {
         let path_str = path.to_string_lossy().to_string();
         let (entries, dups) = VaultManager::import_process(&ctx, &[path_str], None)?;
         if entries.is_empty() {
-            // Identical content already vaulted counts as success.
-            return Ok(if dups.is_empty() { 0 } else { 1 });
+            // Identical content already vaulted — return the existing id(s) so a
+            // re-download still gets routed onto the page the user is viewing.
+            return Ok(dups.iter().map(|f| f.id.clone()).collect());
         }
         let mut vm = state.vault_manager.lock().map_err(|e| e.to_string())?;
-        Ok(vm.import_commit(entries)?.len())
+        let added = vm.import_commit(entries)?;
+        Ok(added.iter().map(|f| f.id.clone()).collect())
     })();
 
     // Never leave plaintext behind, success or not.
@@ -1246,8 +1248,11 @@ fn import_browser_download(app: tauri::AppHandle, path: std::path::PathBuf) {
     }
 
     match imported {
-        Ok(n) if n > 0 => {
-            let _ = app.emit("browser-download-imported", display);
+        Ok(ids) if !ids.is_empty() => {
+            // Payload carries the new file id(s) so the UI can drop them onto the
+            // page that's currently open instead of the generic orphan-rescue
+            // page. `name` keeps the friendly notification text.
+            let _ = app.emit("browser-download-imported", serde_json::json!({ "name": display, "ids": ids }));
         }
         Ok(_) => {
             let _ = app.emit("browser-download-failed", format!("{} (file was empty or unreadable)", display));

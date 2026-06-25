@@ -759,6 +759,15 @@ export default function App() {
   }, [store.screen, loadFiles]);
 
 
+  // Keep the latest page context available to the (long-lived) download
+  // listener below without re-subscribing it on every page change.
+  const currentPageRef = useRef(store.currentPage);
+  const isMediaPageRef = useRef(isMediaPage);
+  useEffect(() => {
+    currentPageRef.current = store.currentPage;
+    isMediaPageRef.current = isMediaPage;
+  }, [store.currentPage, isMediaPage]);
+
   // Vault browser: refresh the grid when a download finishes importing, and
   // surface failures (e.g. vault locked mid-download).
   useEffect(() => {
@@ -768,12 +777,23 @@ export default function App() {
     (async () => {
       try {
         const { listen } = await import("@tauri-apps/api/event");
-        unlistenOk = await listen<string>("browser-download-imported", (e) => {
+        unlistenOk = await listen<{ name: string; ids: string[] } | string>("browser-download-imported", (e) => {
+          // Payload is { name, ids } from the backend; tolerate a bare string too.
+          const payload = e.payload as { name?: string; ids?: string[] } | string;
+          const name = typeof payload === "string" ? payload : (payload?.name ?? "file");
+          const ids = (typeof payload === "object" && Array.isArray(payload?.ids)) ? payload.ids : [];
+          // Drop the new file onto the page actually being viewed, so a grab
+          // shows up where you are instead of being swept onto the first media
+          // page by the orphan-rescue. (Adding it here also marks it referenced,
+          // so the rescue effect skips it.)
+          if (ids.length && isMediaPageRef.current && currentPageRef.current) {
+            store.addFilesToPage(ids, currentPageRef.current);
+          }
           sessionCache.invalidateIndex();
           loadFiles();
           thumbs.clearSeenIds();
           importDoneRef.current = true;
-          store.notify(`Saved to vault: ${e.payload}`, "success");
+          store.notify(`Saved to vault: ${name}`, "success");
         });
         unlistenFail = await listen<string>("browser-download-failed", (e) => {
           store.notify(`Download not saved — ${e.payload}`, "error");
