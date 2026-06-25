@@ -7,6 +7,7 @@ import type { VaultInfo } from "../stores/useStore";
 import { useTauri } from "../hooks/useTauri";
 import type { LockoutStatus } from "../hooks/useTauri";
 import type { ThemeMode } from "../hooks/useThemeMode";
+import { validatePinStrength } from "../utils/pinStrength";
 
 interface Props {
   onUnlock: (vault: VaultInfo) => void;
@@ -228,8 +229,9 @@ export default function LoginScreen({ onUnlock, notify, themeMode = "cyberpunk" 
 
   const handleCreate = async () => {
     if (!newName || !newPin) return;
-    if (newPin.length < 8) {
-      setError("PIN must be at least 8 characters");
+    const weakReason = validatePinStrength(newPin);
+    if (weakReason) {
+      setError(weakReason);
       return;
     }
     setLoading(true);

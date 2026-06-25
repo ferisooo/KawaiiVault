@@ -476,6 +476,106 @@ fn validate_display_name(name: &str) -> Result<String, String> {
     Ok(trimmed.to_string())
 }
 
+/// True when every character steps by a constant ±1 in code-point order
+/// (e.g. "123456", "abcdef", "fedcba", "654321"). Used to reject the most
+/// trivial keyboard/number sequences as passwords.
+fn is_sequential(s: &str) -> bool {
+    let chars: Vec<char> = s.chars().collect();
+    if chars.len() < 4 {
+        return false;
+    }
+    let step = chars[1] as i32 - chars[0] as i32;
+    if step != 1 && step != -1 {
+        return false;
+    }
+    chars.windows(2).all(|w| (w[1] as i32 - w[0] as i32) == step)
+}
+
+/// Enforce a minimum password/passphrase strength for the vault PIN and the
+/// duress password. This is checked ONLY when a password is created or changed;
+/// unlocking an existing vault is never gated by it, so older vaults keep
+/// working unchanged.
+///
+/// Policy (aligned with NIST 800-63B — length is the dominant factor):
+///   • At least 10 characters (hard floor).
+///   • Reject all-one-character, common passwords, and straight sequences.
+///   • 16+ characters: accepted on length alone (a real passphrase needs no
+///     composition rules — "correct horse battery staple" passes).
+///   • 10–15 characters: must NOT be numeric-only and must mix at least 3 of
+///     {lowercase, uppercase, digit, symbol}.
+fn validate_pin_strength(pin: &str) -> Result<(), String> {
+    let len = pin.chars().count();
+    if len < 10 {
+        return Err("Password must be at least 10 characters. A short passphrase of a few words is ideal.".into());
+    }
+    if len > 1024 {
+        return Err("Password is too long (max 1024 characters)".into());
+    }
+
+    // Reject a single repeated character ("aaaaaaaaaa", "1111111111").
+    let mut chars = pin.chars();
+    if let Some(first) = chars.next() {
+        if pin.chars().all(|c| c == first) {
+            return Err("Password is too weak — it is a single repeated character".into());
+        }
+    }
+
+    // Reject common weak passwords (exact or contained, case-insensitive).
+    let lower = pin.to_lowercase();
+    const WEAK: &[&str] = &[
+        "password", "passw0rd", "12345678", "123456789", "1234567890",
+        "qwerty", "qwertyuiop", "letmein", "iloveyou", "admin123",
+        "abc12345", "11111111", "00000000", "password1", "trustno1",
+        "welcome1", "monkey123", "dragon123", "football",
+    ];
+    if WEAK.iter().any(|w| lower == *w || lower.contains(w)) {
+        return Err("Password is too common — choose something harder to guess".into());
+    }
+
+    // Reject trivial ascending/descending sequences.
+    if is_sequential(pin) {
+        return Err("Password is too weak — it is a simple sequence".into());
+    }
+
+    // Long passphrases are strong on length alone.
+    if len >= 16 {
+        return Ok(());
+    }
+
+    // Shorter passwords (10–15): classify character composition.
+    let mut has_lower = false;
+    let mut has_upper = false;
+    let mut has_digit = false;
+    let mut has_symbol = false;
+    for c in pin.chars() {
+        if c.is_ascii_lowercase() {
+            has_lower = true;
+        } else if c.is_ascii_uppercase() {
+            has_upper = true;
+        } else if c.is_ascii_digit() {
+            has_digit = true;
+        } else {
+            has_symbol = true;
+        }
+    }
+
+    // A numeric-only "PIN" is the classic weak case — never allow it in this
+    // length range; push the user toward a passphrase with letters.
+    if has_digit && !has_lower && !has_upper && !has_symbol {
+        return Err("Numeric-only PINs are not allowed. Use letters too, or a longer passphrase (16+ characters).".into());
+    }
+
+    let classes = [has_lower, has_upper, has_digit, has_symbol]
+        .iter()
+        .filter(|present| **present)
+        .count();
+    if classes < 3 {
+        return Err("Password is too weak. Mix at least 3 of: lowercase, uppercase, digits, symbols — or use a longer passphrase (16+ characters).".into());
+    }
+
+    Ok(())
+}
+
 // ── AES-256-GCM chunked encryption ──
 
 const CHUNK_PLAINTEXT_SIZE: usize = 65536; // 64 KB
@@ -1981,9 +2081,7 @@ impl VaultManager {
         key_file_path: Option<&str>,
         duress_pin: Option<&str>,
     ) -> Result<VaultInfo, String> {
-        if pin.len() < 8 {
-            return Err("PIN must be at least 8 characters".to_string());
-        }
+        validate_pin_strength(pin)?;
 
         // Validate vault name: reject empty, path separators, control chars, traversal.
         let validated_name = validate_display_name(name)?;
@@ -2010,9 +2108,7 @@ impl VaultManager {
             if dp == pin {
                 return Err("Duress PIN must be different from main PIN".to_string());
             }
-            if dp.len() < 8 {
-                return Err("Duress PIN must be at least 8 characters".to_string());
-            }
+            validate_pin_strength(dp)?;
             Some(hash_pin(dp, key_file_data.as_deref())?)
         } else {
             None
@@ -2517,9 +2613,7 @@ impl VaultManager {
         let vid = self.active_vault_id.clone().ok_or("No vault unlocked")?;
         let vault = self.vaults.get(&vid).ok_or("Vault not found")?;
 
-        if duress_pin.len() < 8 {
-            return Err("Duress PIN must be at least 8 characters".to_string());
-        }
+        validate_pin_strength(duress_pin)?;
 
         // Read key file if the vault requires one
         let key_file_data = if let Some(kf_path) = key_file_path {

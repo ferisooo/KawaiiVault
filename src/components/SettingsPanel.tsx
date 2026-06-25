@@ -7,6 +7,7 @@ import type { Theme } from "../stores/useStore";
 import type { ThemeMode } from "../hooks/useThemeMode";
 import { useTauri } from "../hooks/useTauri";
 import { invoke } from "@tauri-apps/api/core";
+import { validatePinStrength } from "../utils/pinStrength";
 
 type SettingsTab = "appearance" | "tools" | "help";
 
@@ -607,7 +608,7 @@ const FAQ_CONTENT = () => (
 
     <div>
       <h3 className="text-[var(--color-neon-bright)] uppercase tracking-wider mb-2 font-bold">How do I create a vault?</h3>
-      <p>Click "Create Vault" on the welcome screen, pick a name, and set a strong password (at least 8 characters). That's it — your vault is ready to use right away.</p>
+      <p>Click "Create Vault" on the welcome screen, pick a name, and set a strong password. Use at least 10 characters — a short passphrase of a few words (16+ characters) is ideal and the hardest to guess. That's it — your vault is ready to use right away.</p>
     </div>
 
     <div>
@@ -622,7 +623,7 @@ const FAQ_CONTENT = () => (
 
     <div>
       <h3 className="text-[var(--color-neon-bright)] uppercase tracking-wider mb-2 font-bold">How do I set up the duress password?</h3>
-      <p>Go to Settings &gt; Tools &gt; Duress Password. Pick a password that's different from your main one (at least 8 characters). If you ever enter this password at the login screen, the vault silently destroys itself.</p>
+      <p>Go to Settings &gt; Tools &gt; Duress Password. Pick a strong password that's different from your main one (at least 10 characters; a passphrase is best). If you ever enter this password at the login screen, the vault silently destroys itself.</p>
     </div>
 
     <div>
@@ -1602,8 +1603,9 @@ export default function SettingsPanel({ open, onClose, theme, onThemeChange, cus
   };
 
   const handleSetDuressPin = async () => {
-    if (duressPin.length < 8) {
-      setDuressStatus("Duress PIN must be at least 8 characters");
+    const weakReason = validatePinStrength(duressPin);
+    if (weakReason) {
+      setDuressStatus(weakReason);
       return;
     }
     try {
