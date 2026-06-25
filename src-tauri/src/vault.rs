@@ -1412,6 +1412,14 @@ fn bundle_read_file(path: &Path, vault: &VaultData, file_id: &str, encryption_ke
     } else {
         offset
     };
+    // Guard against corrupt/tampered metadata: the claimed blob must actually
+    // fit inside the bundle on disk. Without this, a bogus `size` could request
+    // a multi-gigabyte allocation below and OOM-crash the process (panic=abort)
+    // before the read could fail gracefully.
+    let bundle_len = file.metadata().map_err(|e| format!("Stat bundle: {}", e))?.len();
+    if data_offset.checked_add(read_size).map_or(true, |end| end > bundle_len) {
+        return Err("Corrupt vault metadata: file extent exceeds bundle".into());
+    }
     file.seek(SeekFrom::Start(data_offset)).map_err(|e| e.to_string())?;
     let mut buf = vec![0u8; read_size as usize];
     file.read_exact(&mut buf).map_err(|e| format!("Read file from bundle: {}", e))?;
@@ -3616,6 +3624,22 @@ impl VaultManager {
         } else {
             offset
         };
+
+        // Guard against corrupt/tampered metadata driving huge allocations in
+        // the streaming/thumbnail/phone consumers: a file's plaintext size can
+        // never exceed the bundle that holds it, and its on-disk blob must fit
+        // within the bundle at its computed offset.
+        let bundle_len = fs::metadata(&bundle_path).map_err(|e| format!("Stat bundle: {}", e))?.len();
+        let on_disk_size = if vault.security.encryption_salt.is_some() {
+            encrypted_bundle_size(target_size)
+        } else {
+            target_size
+        };
+        let fits = target_size <= bundle_len
+            && data_offset.checked_add(on_disk_size).map_or(false, |end| end <= bundle_len);
+        if !fits {
+            return Err("Corrupt vault metadata: file extent exceeds bundle".into());
+        }
 
         Ok(FileStreamInfo {
             bundle_path,
