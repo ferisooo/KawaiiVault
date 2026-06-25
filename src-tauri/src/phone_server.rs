@@ -563,6 +563,8 @@ fn handle_files(shared: &Shared) -> Resp {
                     "category": f.category,
                     "type": f.file_type,
                     "size": f.size,
+                    "favorite": f.favorite,
+                    "date": f.imported_at,
                 }))
                 .collect();
             Resp::json(200, serde_json::json!({ "files": items }).to_string())
@@ -681,9 +683,14 @@ const MOBILE_HTML: &str = r#"<!doctype html>
   header b { color:var(--neon); letter-spacing:.15em; font-size:15px; }
   header input { flex:1; background:#000; border:1px solid var(--line); color:var(--txt); border-radius:8px; padding:9px 12px; font-size:16px; }
   header button { background:transparent; border:1px solid var(--line); color:var(--muted); border-radius:8px; padding:9px 12px; font-size:14px; }
-  .chips { display:flex; gap:6px; margin-top:8px; }
-  .chip { flex:1; text-align:center; background:transparent; border:1px solid var(--line); color:var(--muted); border-radius:8px; padding:7px 0; font-size:14px; }
+  .chips { display:flex; gap:6px; margin-top:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px; }
+  .chips::-webkit-scrollbar { display:none; }
+  .chip { flex:0 0 auto; text-align:center; background:transparent; border:1px solid var(--line); color:var(--muted); border-radius:8px; padding:7px 14px; font-size:14px; white-space:nowrap; }
   .chip.on { background:rgba(255,0,60,.16); border-color:var(--neon); color:#ff6680; }
+  .sortbar { display:flex; gap:6px; align-items:center; margin-top:8px; }
+  .sortbar label { font-size:12px; color:var(--muted); letter-spacing:.05em; text-transform:uppercase; }
+  .sortbar select { flex:1; background:#000; border:1px solid var(--line); color:var(--txt); border-radius:8px; padding:8px 10px; font-size:15px; }
+  .sortbar .dir { background:transparent; border:1px solid var(--line); color:var(--muted); border-radius:8px; padding:8px 13px; font-size:15px; line-height:1; }
   #login { max-width:340px; margin:18vh auto 0; padding:24px; text-align:center; }
   #login h1 { color:var(--neon); letter-spacing:.2em; font-size:20px; }
   #login input { width:100%; background:#000; border:1px solid var(--line); color:var(--txt); border-radius:10px; padding:13px; font-size:17px; margin:14px 0; }
@@ -731,10 +738,16 @@ const MOBILE_HTML: &str = r#"<!doctype html>
       <button class="icon" onclick="load()" title="Refresh" aria-label="Refresh">↻</button>
       <button onclick="logout()">Lock</button>
     </div>
-    <div class="chips">
-      <button class="chip on" data-f="all" onclick="setFilter('all')">All</button>
-      <button class="chip" data-f="img" onclick="setFilter('img')">Images</button>
-      <button class="chip" data-f="vid" onclick="setFilter('vid')">Videos</button>
+    <div class="chips" id="chips"></div>
+    <div class="sortbar">
+      <label>Sort</label>
+      <select id="sortField" onchange="setSort()">
+        <option value="date">Date added</option>
+        <option value="name">Name</option>
+        <option value="size">Size</option>
+        <option value="type">Type</option>
+      </select>
+      <button class="dir" id="sortDir" onclick="toggleDir()" title="Sort direction" aria-label="Sort direction">↓</button>
     </div>
   </header>
   <div id="count"></div>
@@ -775,8 +788,11 @@ function sha256hex(ascii){
   return H.map(x=>('00000000'+(x>>>0).toString(16)).slice(-8)).join('');
 }
 
+const FAV = '★';     // sentinel filter key for the Favorites chip
 let FILES = [];
-let FILTER = 'all';
+let FILTER = 'All';       // 'All', FAV, or an exact category string
+let SORT_FIELD = 'date';  // name | date | size | type
+let SORT_ASC = false;     // date defaults to newest-first (descending)
 let curBlob = null;
 let VIEW_LIST = [];   // current filtered/sorted list shown in the grid
 let curIndex = -1;    // index into VIEW_LIST currently open in the viewer
@@ -812,22 +828,63 @@ async function load(){
     if (!r.ok) { if (r.status===401) location.reload(); return; }
     const j = await r.json();
     FILES = j.files || [];
+    buildChips();
     render();
   } catch(e){}
 }
 
-function setFilter(f){
-  FILTER = f;
-  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c.dataset.f === f));
+// Build the category chip row from the categories actually present in the
+// vault (plus All and, if any exist, Favorites). Drops a stale active filter.
+function buildChips(){
+  const cats = [...new Set(FILES.map(f => f.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const hasFav = FILES.some(f => f.favorite);
+  if (FILTER === FAV) { if (!hasFav) FILTER = 'All'; }
+  else if (FILTER !== 'All' && !cats.includes(FILTER)) FILTER = 'All';
+  const chips = document.getElementById('chips');
+  chips.innerHTML = '';
+  const add = (key, label) => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (FILTER === key ? ' on' : '');
+    b.dataset.k = key;
+    b.textContent = label;
+    b.onclick = () => setFilter(key);
+    chips.appendChild(b);
+  };
+  add('All', 'All');
+  if (hasFav) add(FAV, '★ Favorites');
+  cats.forEach(c => add(c, c));
+}
+
+function setFilter(key){
+  FILTER = key;
+  document.querySelectorAll('#chips .chip').forEach(c => c.classList.toggle('on', c.dataset.k === key));
+  render();
+}
+
+function setSort(){ SORT_FIELD = document.getElementById('sortField').value; render(); }
+function toggleDir(){
+  SORT_ASC = !SORT_ASC;
+  document.getElementById('sortDir').textContent = SORT_ASC ? '↑' : '↓';
   render();
 }
 
 function render(){
   const q = (document.getElementById('q').value||'').toLowerCase();
   const list = FILES.filter(f => {
-    if (FILTER === 'img' && !isImg(f)) return false;
-    if (FILTER === 'vid' && !isVid(f)) return false;
+    if (FILTER === FAV) { if (!f.favorite) return false; }
+    else if (FILTER !== 'All' && f.category !== FILTER) return false;
     return !q || (f.name||'').toLowerCase().includes(q);
+  });
+  const dir = SORT_ASC ? 1 : -1;
+  const byName = (a,b) => String(a.name||'').toLowerCase().localeCompare(String(b.name||'').toLowerCase());
+  list.sort((a,b) => {
+    let r;
+    if (SORT_FIELD === 'size') r = (a.size||0) - (b.size||0);
+    else if (SORT_FIELD === 'date') r = String(a.date||'').localeCompare(String(b.date||''));
+    else if (SORT_FIELD === 'type') r = String(a.type||'').localeCompare(String(b.type||''));
+    else r = byName(a,b);
+    if (r === 0) r = byName(a,b); // stable tiebreak by name
+    return r * dir;
   });
   document.getElementById('count').textContent = list.length + ' file' + (list.length===1?'':'s');
   VIEW_LIST = list;
