@@ -29,7 +29,7 @@
 
 use std::collections::HashMap;
 use std::io::{Read, Write};
-use std::net::{IpAddr, TcpListener, TcpStream, UdpSocket};
+use std::net::{IpAddr, Ipv4Addr, TcpListener, TcpStream, UdpSocket};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
@@ -102,10 +102,22 @@ struct Sessions {
     tokens: HashMap<String, Instant>, // token -> expiry
 }
 
-struct Lockout {
+/// Per-client failed-login state.
+struct LockoutEntry {
     fails: u32,
     locked_until: Option<Instant>,
 }
+
+/// Brute-force lockout is tracked PER CLIENT IP, not globally. A global counter
+/// let any device on the LAN lock out the legitimate phone by failing a few
+/// logins; keying on the source address contains a bad/hostile client to itself.
+struct Lockout {
+    by_ip: HashMap<IpAddr, LockoutEntry>,
+}
+
+/// Upper bound on tracked client IPs, so a source-spoofing flood can't grow the
+/// map without bound. Expired (unlocked) entries are pruned first.
+const MAX_LOCKOUT_IPS: usize = 2048;
 
 struct Shared {
     app: tauri::AppHandle,
@@ -120,6 +132,11 @@ struct Shared {
 pub struct PhoneServerHandle {
     pub port: u16,
     pub lan_ip: String,
+    /// SHA-256 fingerprint of the session's self-signed TLS certificate,
+    /// formatted as colon-separated uppercase hex. Shown in the PC UI so the
+    /// user can compare it against what the phone's browser reports and detect
+    /// a man-in-the-middle that swapped in its own certificate.
+    pub cert_fingerprint: String,
     stop: Arc<AtomicBool>,
     workers: Vec<JoinHandle<()>>,
 }
@@ -193,6 +210,18 @@ pub fn start(app: tauri::AppHandle, access_password: String) -> Result<PhoneServ
 
     // Build the TLS config (self-signed, ring provider).
     let (cert_der, key_der) = gen_cert(&lan_ip)?;
+
+    // Fingerprint the cert so the PC UI can show it for out-of-band comparison
+    // against the phone's browser certificate dialog (MITM detection).
+    let cert_fingerprint = {
+        let digest = Sha256::digest(cert_der.as_ref());
+        digest
+            .iter()
+            .map(|b| format!("{:02X}", b))
+            .collect::<Vec<_>>()
+            .join(":")
+    };
+
     let provider = rustls::crypto::ring::default_provider();
     let mut tls_config = ServerConfig::builder_with_provider(Arc::new(provider))
         .with_safe_default_protocol_versions()
@@ -207,12 +236,15 @@ pub fn start(app: tauri::AppHandle, access_password: String) -> Result<PhoneServ
     tls_config.alpn_protocols = vec![b"http/1.1".to_vec()];
     let tls_config = Arc::new(tls_config);
 
-    // Bind a random high port.
+    // Bind a random high port — ONLY on the detected LAN interface, not
+    // 0.0.0.0. This keeps the server off every other interface the host may
+    // have (VPNs, virtual adapters, secondary NICs) and narrows exposure to
+    // the one subnet the phone is actually on.
     let mut listener: Option<TcpListener> = None;
     let mut chosen_port = 0u16;
     for _ in 0..8 {
         let port = 49152 + (OsRng.next_u32() % 16000) as u16;
-        if let Ok(l) = TcpListener::bind(("0.0.0.0", port)) {
+        if let Ok(l) = TcpListener::bind((lan_ip.as_str(), port)) {
             if l.set_nonblocking(true).is_ok() {
                 listener = Some(l);
                 chosen_port = port;
@@ -226,7 +258,7 @@ pub fn start(app: tauri::AppHandle, access_password: String) -> Result<PhoneServ
         app: app.clone(),
         password: access_password.into_bytes(),
         sessions: Mutex::new(Sessions { tokens: HashMap::new() }),
-        lockout: Mutex::new(Lockout { fails: 0, locked_until: None }),
+        lockout: Mutex::new(Lockout { by_ip: HashMap::new() }),
         challenges: Mutex::new(HashMap::new()),
     });
 
@@ -258,7 +290,7 @@ pub fn start(app: tauri::AppHandle, access_password: String) -> Result<PhoneServ
         })
     };
 
-    Ok(PhoneServerHandle { port: chosen_port, lan_ip, stop, workers: vec![acceptor] })
+    Ok(PhoneServerHandle { port: chosen_port, lan_ip, cert_fingerprint, stop, workers: vec![acceptor] })
 }
 
 // ── Connection / HTTP plumbing over the TLS stream ──
@@ -359,6 +391,9 @@ fn serve_conn(mut tcp: TcpStream, config: Arc<ServerConfig>, shared: Arc<Shared>
     let _ = tcp.set_read_timeout(Some(Duration::from_secs(30)));
     let _ = tcp.set_write_timeout(Some(Duration::from_secs(30)));
 
+    // Source address for per-client brute-force lockout.
+    let client_ip = tcp.peer_addr().map(|a| a.ip()).unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED));
+
     let mut conn = match rustls::ServerConnection::new(config) {
         Ok(c) => c,
         Err(_) => return,
@@ -366,7 +401,7 @@ fn serve_conn(mut tcp: TcpStream, config: Arc<ServerConfig>, shared: Arc<Shared>
     let mut tls = rustls::Stream::new(&mut conn, &mut tcp);
 
     if let Some(req) = read_request(&mut tls) {
-        let resp = route(&req, &shared);
+        let resp = route(&req, &shared, client_ip);
         write_response(&mut tls, &resp);
     }
 }
@@ -421,7 +456,7 @@ fn query_param(query: &str, key: &str) -> Option<String> {
     None
 }
 
-fn route(req: &Req, shared: &Shared) -> Resp {
+fn route(req: &Req, shared: &Shared, client_ip: IpAddr) -> Resp {
     // DNS-rebinding guard on every request.
     if !host_is_ip(req) {
         return Resp::json(403, "{\"error\":\"forbidden host\"}".into());
@@ -450,7 +485,7 @@ fn route(req: &Req, shared: &Shared) -> Resp {
         return Resp::json(200, format!("{{\"nonce\":\"{}\"}}", nonce));
     }
     if req.path == "/login" && post {
-        return handle_login(req, shared);
+        return handle_login(req, shared, client_ip);
     }
 
     // Everything below requires a valid session.
@@ -478,14 +513,17 @@ fn route(req: &Req, shared: &Shared) -> Resp {
     Resp::json(404, "{\"error\":\"not found\"}".into())
 }
 
-fn handle_login(req: &Req, shared: &Shared) -> Resp {
-    // Brute-force lockout.
+fn handle_login(req: &Req, shared: &Shared, client_ip: IpAddr) -> Resp {
+    // Brute-force lockout — scoped to THIS client IP, so one bad/hostile device
+    // on the LAN can't lock out the legitimate phone.
     {
         let l = shared.lockout.lock().unwrap();
-        if let Some(until) = l.locked_until {
-            if until > Instant::now() {
-                let secs = (until - Instant::now()).as_secs() + 1;
-                return Resp::json(429, format!("{{\"error\":\"locked\",\"retry\":{}}}", secs));
+        if let Some(entry) = l.by_ip.get(&client_ip) {
+            if let Some(until) = entry.locked_until {
+                if until > Instant::now() {
+                    let secs = (until - Instant::now()).as_secs() + 1;
+                    return Resp::json(429, format!("{{\"error\":\"locked\",\"retry\":{}}}", secs));
+                }
             }
         }
     }
@@ -522,8 +560,7 @@ fn handle_login(req: &Req, shared: &Shared) -> Resp {
     if nonce_ok && ct_eq(proof.as_bytes(), expected.as_bytes()) {
         {
             let mut l = shared.lockout.lock().unwrap();
-            l.fails = 0;
-            l.locked_until = None;
+            l.by_ip.remove(&client_ip);
         }
         let token = random_token();
         if let Ok(mut s) = shared.sessions.lock() {
@@ -538,12 +575,19 @@ fn handle_login(req: &Req, shared: &Shared) -> Resp {
         Resp::json(200, "{\"ok\":true}".into()).header("Set-Cookie", &cookie)
     } else {
         let mut l = shared.lockout.lock().unwrap();
-        l.fails += 1;
-        if l.fails >= MAX_LOGIN_FAILS {
-            let over = l.fails - MAX_LOGIN_FAILS;
+        let now = Instant::now();
+        // Bound the map: if it's at capacity, drop entries that are no longer
+        // locked before inserting a new one.
+        if l.by_ip.len() >= MAX_LOCKOUT_IPS && !l.by_ip.contains_key(&client_ip) {
+            l.by_ip.retain(|_, e| e.locked_until.map_or(false, |u| u > now));
+        }
+        let entry = l.by_ip.entry(client_ip).or_insert(LockoutEntry { fails: 0, locked_until: None });
+        entry.fails += 1;
+        if entry.fails >= MAX_LOGIN_FAILS {
+            let over = entry.fails - MAX_LOGIN_FAILS;
             let secs = (30u64 << over.min(5)).min(900);
-            l.locked_until = Some(Instant::now() + Duration::from_secs(secs));
-            l.fails = MAX_LOGIN_FAILS;
+            entry.locked_until = Some(now + Duration::from_secs(secs));
+            entry.fails = MAX_LOGIN_FAILS;
         }
         Resp::json(401, "{\"error\":\"wrong password\"}".into())
     }

@@ -43,6 +43,9 @@ struct PhoneStatus {
     running: bool,
     url: Option<String>,
     port: Option<u16>,
+    /// SHA-256 fingerprint of the session TLS cert (colon-separated hex), for
+    /// out-of-band MITM verification against the phone's browser dialog.
+    cert_fingerprint: Option<String>,
 }
 
 #[tauri::command]
@@ -58,6 +61,7 @@ async fn phone_server_start(app: tauri::AppHandle, access_password: String) -> R
             running: true,
             url: Some(format!("https://{}:{}", handle.lan_ip, handle.port)),
             port: Some(handle.port),
+            cert_fingerprint: Some(handle.cert_fingerprint.clone()),
         };
         *state.phone_server.lock().map_err(|e| e.to_string())? = Some(handle);
         Ok(status)
@@ -69,7 +73,7 @@ async fn phone_server_start(app: tauri::AppHandle, access_password: String) -> R
 #[tauri::command]
 async fn phone_server_stop(app: tauri::AppHandle) -> Result<PhoneStatus, String> {
     stop_phone_server(&app);
-    Ok(PhoneStatus { running: false, url: None, port: None })
+    Ok(PhoneStatus { running: false, url: None, port: None, cert_fingerprint: None })
 }
 
 #[tauri::command]
@@ -77,8 +81,8 @@ async fn phone_server_status(app: tauri::AppHandle) -> Result<PhoneStatus, Strin
     let state = app.state::<AppState>();
     let guard = state.phone_server.lock().map_err(|e| e.to_string())?;
     Ok(match guard.as_ref() {
-        Some(h) => PhoneStatus { running: true, url: Some(format!("https://{}:{}", h.lan_ip, h.port)), port: Some(h.port) },
-        None => PhoneStatus { running: false, url: None, port: None },
+        Some(h) => PhoneStatus { running: true, url: Some(format!("https://{}:{}", h.lan_ip, h.port)), port: Some(h.port), cert_fingerprint: Some(h.cert_fingerprint.clone()) },
+        None => PhoneStatus { running: false, url: None, port: None, cert_fingerprint: None },
     })
 }
 

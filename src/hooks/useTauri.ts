@@ -149,11 +149,11 @@ export function useTauri() {
 
     // Phone access: hardened LAN companion server (off by default)
     phoneServerStart: (accessPassword: string) =>
-      call<{ running: boolean; url: string | null; port: number | null }>("phone_server_start", { accessPassword }),
+      call<{ running: boolean; url: string | null; port: number | null; cert_fingerprint: string | null }>("phone_server_start", { accessPassword }),
     phoneServerStop: () =>
-      call<{ running: boolean; url: string | null; port: number | null }>("phone_server_stop"),
+      call<{ running: boolean; url: string | null; port: number | null; cert_fingerprint: string | null }>("phone_server_stop"),
     phoneServerStatus: () =>
-      call<{ running: boolean; url: string | null; port: number | null }>("phone_server_status"),
+      call<{ running: boolean; url: string | null; port: number | null; cert_fingerprint: string | null }>("phone_server_status"),
 
     // Encrypted pages storage (passwords, notes, documents)
     savePages: (pagesJson: string) => call<void>("save_pages", { pagesJson }),

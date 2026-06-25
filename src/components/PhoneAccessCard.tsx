@@ -1,10 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
 import { Smartphone, ShieldAlert, Copy, Check } from "lucide-react";
 
+interface PhoneStatus {
+  running: boolean;
+  url: string | null;
+  port: number | null;
+  cert_fingerprint: string | null;
+}
+
 interface PhoneTauri {
-  phoneServerStart: (accessPassword: string) => Promise<{ running: boolean; url: string | null; port: number | null }>;
-  phoneServerStop: () => Promise<{ running: boolean; url: string | null; port: number | null }>;
-  phoneServerStatus: () => Promise<{ running: boolean; url: string | null; port: number | null }>;
+  phoneServerStart: (accessPassword: string) => Promise<PhoneStatus>;
+  phoneServerStop: () => Promise<PhoneStatus>;
+  phoneServerStatus: () => Promise<PhoneStatus>;
 }
 
 interface Props {
@@ -20,6 +27,7 @@ interface Props {
 export default function PhoneAccessCard({ tauri }: Props) {
   const [running, setRunning] = useState(false);
   const [url, setUrl] = useState<string | null>(null);
+  const [fingerprint, setFingerprint] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +35,7 @@ export default function PhoneAccessCard({ tauri }: Props) {
   const [copied, setCopied] = useState(false);
 
   const refresh = useCallback(() => {
-    tauri.phoneServerStatus().then((s) => { setRunning(s.running); setUrl(s.url); }).catch(() => {});
+    tauri.phoneServerStatus().then((s) => { setRunning(s.running); setUrl(s.url); setFingerprint(s.cert_fingerprint); }).catch(() => {});
   }, [tauri]);
 
   useEffect(() => { refresh(); }, [refresh]);
@@ -39,7 +47,7 @@ export default function PhoneAccessCard({ tauri }: Props) {
     setBusy(true);
     try {
       const s = await tauri.phoneServerStart(password);
-      setRunning(s.running); setUrl(s.url);
+      setRunning(s.running); setUrl(s.url); setFingerprint(s.cert_fingerprint);
       setPassword(""); setConfirm("");
     } catch (e) {
       setError(typeof e === "string" ? e : "Could not start phone access.");
@@ -50,7 +58,7 @@ export default function PhoneAccessCard({ tauri }: Props) {
 
   const stop = async () => {
     setBusy(true);
-    try { const s = await tauri.phoneServerStop(); setRunning(s.running); setUrl(s.url); }
+    try { const s = await tauri.phoneServerStop(); setRunning(s.running); setUrl(s.url); setFingerprint(s.cert_fingerprint); }
     catch { /* ignore */ }
     finally { setBusy(false); }
   };
@@ -128,6 +136,22 @@ export default function PhoneAccessCard({ tauri }: Props) {
             time (Advanced → Proceed) — expected for a private server — then enter your access
             password. Keep this window unlocked; access ends the moment the vault locks.
           </p>
+          {fingerprint && (
+            <div className="mb-3 px-3 py-2 rounded-sm border border-amber-500/30 bg-amber-500/5">
+              <div className="flex items-center gap-2 mb-1">
+                <ShieldAlert size={14} className="text-amber-400 shrink-0" />
+                <span className="font-mono text-[13px] text-amber-200/90 uppercase tracking-wider">Verify certificate (anti-snooping)</span>
+              </div>
+              <p className="font-mono text-[13px] text-amber-200/70 leading-relaxed mb-2">
+                On the phone's certificate warning, tap the cert details and compare its
+                SHA‑256 fingerprint to the one below. If they don't match exactly, someone on the
+                network may be intercepting — do not proceed.
+              </p>
+              <code className="block bg-[var(--color-cyber-black)] border border-[var(--color-cyber-border)] rounded-sm px-2 py-1.5 text-[12px] text-[var(--color-neon-bright)] font-mono break-all">
+                {fingerprint}
+              </code>
+            </div>
+          )}
           <button
             onClick={stop}
             disabled={busy}
