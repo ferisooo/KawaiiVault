@@ -2,9 +2,18 @@
  * Session-level encryption for sensitive data (passwords, TOTP secrets).
  *
  * Uses Web Crypto AES-GCM with a non-extractable key generated fresh each
- * session.  The key lives only inside the browser's crypto module and cannot
- * be read from JavaScript — so even if someone inspects React state or a
- * heap dump, they see encrypted blobs instead of plaintext passwords.
+ * session. The key lives inside the browser's crypto module and cannot be read
+ * back out as bytes from JavaScript.
+ *
+ * What this gains you: sensitive fields are stored as ciphertext in React
+ * state, so they are not sitting in the clear in app state most of the time,
+ * and the raw key cannot be exported by JS.
+ *
+ * What it does NOT do: it is not protection against a full memory dump or a
+ * compromised renderer. The decryption key and any value you actually decrypt
+ * for display both live in this same process, so an attacker who can read the
+ * process memory can still recover plaintext. Treat this as state hygiene, not
+ * as a defense against an attacker with code execution / memory access.
  */
 
 import { bytesToBase64, base64ToBytes } from "./base64";

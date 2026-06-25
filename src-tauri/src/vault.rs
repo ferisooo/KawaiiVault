@@ -146,7 +146,22 @@ impl Default for SecurityConfig {
     }
 }
 
-/// XOR-masked memory protection for sensitive data
+/// In-memory holder for sensitive bytes (key material / PIN hashes) kept for
+/// the duration of an unlocked session.
+///
+/// IMPORTANT — be honest about the threat model this covers:
+///   • It DOES bound the secret's exposure: both the obfuscated buffer AND its
+///     XOR mask are mlock'd (kept out of swap / the page file) and zeroized on
+///     drop, so a key never lands on disk and its lifetime in RAM is bounded.
+///   • It does NOT hide the secret from an attacker who can read this process's
+///     memory. The mask lives in the same address space, so a full memory dump
+///     can XOR the two buffers back together. The masking is only a minor
+///     obstacle to casual `strings`-style scanning, NOT a defense against a
+///     live RAM dump. Do not rely on it as such.
+///
+/// (Previously only the data buffer was locked, leaving the XOR mask — which
+/// trivially de-obfuscates the data — swappable to disk; and Drop never
+/// unlocked the pages. Both are fixed here.)
 pub struct ProtectedMemory {
     masked_data: Vec<u8>,
     mask: Vec<u8>,
@@ -158,6 +173,11 @@ impl ProtectedMemory {
         let mut mask = vec![0u8; data.len()];
         rng.fill_bytes(&mut mask);
         let masked: Vec<u8> = data.iter().zip(mask.iter()).map(|(d, m)| d ^ m).collect();
+        // Lock BOTH buffers so neither the obfuscated data nor the mask can be
+        // paged out to disk. The mask must be locked too — otherwise the key
+        // that undoes the obfuscation could itself leak to the swap file.
+        lock_memory(masked.as_ptr(), masked.len());
+        lock_memory(mask.as_ptr(), mask.len());
         ProtectedMemory {
             masked_data: masked,
             mask,
@@ -176,6 +196,9 @@ impl ProtectedMemory {
 
 impl Drop for ProtectedMemory {
     fn drop(&mut self) {
+        // Unlock both pages we locked in `new`, then wipe the bytes.
+        unlock_memory(self.masked_data.as_ptr(), self.masked_data.len());
+        unlock_memory(self.mask.as_ptr(), self.mask.len());
         self.zeroize();
     }
 }
