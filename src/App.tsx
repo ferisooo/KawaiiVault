@@ -2091,7 +2091,11 @@ export default function App() {
         <Suspense fallback={null}>
           <FullscreenViewer
             file={store.fullscreenFile}
-            files={files}
+            // Navigate within the SAME list the grid shows. On a custom media
+            // page that's the page-scoped set (mediaFiles); otherwise the full
+            // filtered list. Passing the global `files` here made arrow-key /
+            // next-prev navigation leak in media from other pages.
+            files={isMediaPage ? mediaFiles : files}
             onClose={handleCloseViewer}
             onNavigate={(f) => store.update({ fullscreenFile: f })}
             onDelete={(fileId) => {
