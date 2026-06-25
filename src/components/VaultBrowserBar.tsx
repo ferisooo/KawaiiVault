@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, RotateCw, Globe, X, ShieldCheck, Video, Music, Download } from "lucide-react";
+import { ArrowLeft, ArrowRight, RotateCw, Globe, X, ShieldCheck, Video, Music, Download, Star, Bookmark, Trash2 } from "lucide-react";
 import CyberButton from "./CyberButton";
 import type { ThemeMode } from "../hooks/useThemeMode";
 
@@ -13,6 +13,12 @@ export interface DetectedMedia {
   dur?: number;
 }
 
+export interface BrowserBookmark {
+  url: string;
+  title: string;
+  addedAt: string; // ISO timestamp
+}
+
 interface Props {
   themeMode?: ThemeMode;
   onOpen: (url: string) => void;
@@ -21,6 +27,22 @@ interface Props {
   onReload: () => void;
   onClose: () => void;
   onGrab: (url: string, referer: string | null) => void;
+  /** Load persisted bookmarks JSON (encrypted in the vault). Optional for demo mode. */
+  loadBookmarks?: () => Promise<string>;
+  /** Persist bookmarks JSON (encrypted in the vault). Optional for demo mode. */
+  saveBookmarks?: (json: string) => Promise<void>;
+}
+
+/** Human-friendly label for a bookmarked URL (host + path, no scheme/www). */
+function bookmarkLabel(url: string): string {
+  try {
+    const u = new URL(url);
+    const path = u.pathname === "/" ? "" : u.pathname;
+    const label = (u.hostname.replace(/^www\./, "") + path).replace(/\/$/, "");
+    return label || url;
+  } catch {
+    return url;
+  }
 }
 
 /** Turn whatever the user typed into a navigable URL (or a search query). */
@@ -41,13 +63,59 @@ export function toBrowserUrl(input: string): string | null {
  * can grab it straight into the vault. Downloads never touch the disk
  * unencrypted.
  */
-export default function VaultBrowserBar({ themeMode = "cyberpunk", onOpen, onBack, onForward, onReload, onClose, onGrab }: Props) {
+export default function VaultBrowserBar({ themeMode = "cyberpunk", onOpen, onBack, onForward, onReload, onClose, onGrab, loadBookmarks, saveBookmarks }: Props) {
   const [input, setInput] = useState("");
   const [currentUrl, setCurrentUrl] = useState<string | null>(null);
   const [media, setMedia] = useState<DetectedMedia[]>([]);
   const [showMedia, setShowMedia] = useState(false);
   const [grabbed, setGrabbed] = useState<Set<string>>(new Set());
+  const [bookmarks, setBookmarks] = useState<BrowserBookmark[]>([]);
+  const [showBookmarks, setShowBookmarks] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Load persisted bookmarks once when the browser bar mounts.
+  useEffect(() => {
+    if (!loadBookmarks) return;
+    let cancelled = false;
+    loadBookmarks()
+      .then((json) => {
+        if (cancelled) return;
+        try {
+          const parsed = JSON.parse(json) as BrowserBookmark[];
+          if (Array.isArray(parsed)) setBookmarks(parsed.filter((b) => b && typeof b.url === "string"));
+        } catch { /* corrupt/empty → start blank */ }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [loadBookmarks]);
+
+  // Persist + update state together so storage never drifts from the UI.
+  const persistBookmarks = (next: BrowserBookmark[]) => {
+    setBookmarks(next);
+    saveBookmarks?.(JSON.stringify(next)).catch(() => {});
+  };
+
+  const isBookmarked = !!currentUrl && bookmarks.some((b) => b.url === currentUrl);
+
+  const toggleBookmark = () => {
+    if (!currentUrl) return;
+    if (isBookmarked) {
+      persistBookmarks(bookmarks.filter((b) => b.url !== currentUrl));
+    } else {
+      const entry: BrowserBookmark = { url: currentUrl, title: bookmarkLabel(currentUrl), addedAt: new Date().toISOString() };
+      // Newest first.
+      persistBookmarks([entry, ...bookmarks]);
+    }
+  };
+
+  const removeBookmark = (url: string) => {
+    persistBookmarks(bookmarks.filter((b) => b.url !== url));
+  };
+
+  const openBookmark = (url: string) => {
+    onOpen(url);
+    setShowBookmarks(false);
+  };
 
   useEffect(() => {
     let unNav: (() => void) | undefined;
@@ -113,6 +181,32 @@ export default function VaultBrowserBar({ themeMode = "cyberpunk", onOpen, onBac
           Go
         </CyberButton>
 
+        {/* Bookmark the current page (star fills when this page is saved). */}
+        <CyberButton
+          themeMode={themeMode}
+          variant={isBookmarked ? "primary" : "ghost"}
+          size="sm"
+          icon={<Star size={17} fill={isBookmarked ? "currentColor" : "none"} />}
+          onClick={toggleBookmark}
+          title={!currentUrl ? "Open a page first to bookmark it" : isBookmarked ? "Remove this page from bookmarks" : "Bookmark this page"}
+          aria-label="Toggle bookmark"
+          style={!currentUrl ? { opacity: 0.55 } : undefined}
+        />
+
+        {/* Bookmarks list toggle. */}
+        <CyberButton
+          themeMode={themeMode}
+          variant={showBookmarks ? "primary" : bookmarks.length === 0 ? "ghost" : "secondary"}
+          size="sm"
+          icon={<Bookmark size={17} />}
+          onClick={() => { setShowBookmarks((v) => !v); setShowMedia(false); }}
+          title="Saved bookmarks"
+          aria-label="Show bookmarks"
+          style={bookmarks.length === 0 ? { opacity: 0.7 } : undefined}
+        >
+          {`Saved (${bookmarks.length})`}
+        </CyberButton>
+
         {/* Detected-media indicator — always visible so there's a fixed place
             to check; lights up and becomes clickable when the scanner finds
             grabbable media on the current page. */}
@@ -121,7 +215,7 @@ export default function VaultBrowserBar({ themeMode = "cyberpunk", onOpen, onBac
           variant={media.length === 0 ? "ghost" : showMedia ? "primary" : "secondary"}
           size="sm"
           icon={<Video size={17} />}
-          onClick={() => { if (media.length > 0) setShowMedia((v) => !v); }}
+          onClick={() => { if (media.length > 0) { setShowMedia((v) => !v); setShowBookmarks(false); } }}
           title={media.length === 0
             ? "Watching this page for videos/audio — none found yet (ads and stream fragments are filtered out)"
             : "Media detected on this page — click to list and save to vault"}
@@ -174,6 +268,49 @@ export default function VaultBrowserBar({ themeMode = "cyberpunk", onOpen, onBac
                 );
               })}
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Saved bookmarks list */}
+      <AnimatePresence>
+        {showBookmarks && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden border-t border-[var(--color-cyber-border)]"
+          >
+            {bookmarks.length === 0 ? (
+              <div className="px-4 py-3 font-mono text-[15px] text-[var(--color-cyber-muted)]">
+                No bookmarks yet. Open a page and tap the <Star size={13} className="inline align-[-2px]" /> to save it here.
+              </div>
+            ) : (
+              <div className="max-h-56 overflow-y-auto px-3 py-2 space-y-1">
+                {bookmarks.map((b) => (
+                  <div key={b.url} className="flex items-center gap-2 px-2 py-1.5 rounded-sm bg-[var(--color-cyber-black)]/40 hover:bg-[var(--color-cyber-black)]/70 transition-colors">
+                    <Bookmark size={15} className="text-[var(--color-neon-primary)] shrink-0" />
+                    <button
+                      type="button"
+                      onClick={() => openBookmark(b.url)}
+                      className="flex-1 min-w-0 text-left font-mono text-[17px] text-[var(--color-cyber-text)] truncate hover:text-[var(--color-neon-bright)] transition-colors"
+                      title={b.url}
+                    >
+                      {b.title || bookmarkLabel(b.url)}
+                    </button>
+                    <CyberButton
+                      themeMode={themeMode}
+                      variant="ghost"
+                      size="sm"
+                      icon={<Trash2 size={15} />}
+                      onClick={() => removeBookmark(b.url)}
+                      title="Remove bookmark"
+                      aria-label="Remove bookmark"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

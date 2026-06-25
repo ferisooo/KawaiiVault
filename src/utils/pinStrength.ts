@@ -17,9 +17,8 @@
 
 const WEAK_PASSWORDS = [
   "password", "passw0rd", "12345678", "123456789", "1234567890",
-  "qwerty", "qwertyuiop", "letmein", "iloveyou", "admin123",
-  "abc12345", "11111111", "00000000", "password1", "trustno1",
-  "welcome1", "monkey123", "dragon123", "football",
+  "qwerty", "qwertyuiop", "letmein", "iloveyou", "admin",
+  "abc", "welcome", "monkey", "dragon", "football", "trustno",
 ];
 
 /** True for "123456" / "abcdef" / "fedcba" style constant ±1 sequences. */
@@ -51,8 +50,12 @@ export function validatePinStrength(pin: string): string | null {
     return "Password is too weak — it is a single repeated character";
   }
 
+  // Match the whole string or the string with trailing digits stripped
+  // (e.g. "password123") — not a substring, so a long passphrase that merely
+  // contains a common word is not penalised.
   const lower = pin.toLowerCase();
-  if (WEAK_PASSWORDS.some((w) => lower === w || lower.includes(w))) {
+  const stripped = lower.replace(/[0-9]+$/, "");
+  if (WEAK_PASSWORDS.some((w) => lower === w || stripped === w)) {
     return "Password is too common — choose something harder to guess";
   }
 

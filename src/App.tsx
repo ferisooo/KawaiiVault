@@ -1843,6 +1843,8 @@ export default function App() {
                             store.notify("Grabbing media into vault…", "info");
                             tauri.browserGrab(url, referer ?? undefined).catch((e) => store.notify(String(e), "error"));
                           }}
+                          loadBookmarks={() => tauri.loadBookmarks()}
+                          saveBookmarks={(json) => tauri.saveBookmarks(json)}
                         />
                       )}
 

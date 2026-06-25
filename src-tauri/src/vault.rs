@@ -255,6 +255,11 @@ pub(crate) struct VaultData {
     /// None for vaults created before pages feature (defaults to empty array).
     #[serde(default)]
     pages_json: Option<String>,
+    /// JSON string of the private browser's Bookmark[] — encrypted at rest in
+    /// the bundle footer (it reveals sites the user visits). None / "[]" for
+    /// vaults created before the bookmarks feature.
+    #[serde(default)]
+    bookmarks_json: Option<String>,
     /// AES-256-GCM encrypted blob (hex) containing sensitive metadata:
     /// audit_log, folders, file metadata (names, folders, favorites), and pages_json.
     /// When present, the plaintext fields above are cleared in the on-disk format
@@ -282,6 +287,8 @@ struct SensitiveMetadata {
     /// Full file metadata (names, types, folders, favorites, etc.)
     files: Vec<VaultFile>,
     pages_json: Option<String>,
+    #[serde(default)]
+    bookmarks_json: Option<String>,
     #[serde(default)]
     watch_folder: Option<String>,
 }
@@ -565,15 +572,18 @@ fn validate_pin_strength(pin: &str) -> Result<(), String> {
         }
     }
 
-    // Reject common weak passwords (exact or contained, case-insensitive).
+    // Reject common weak passwords, and the "common word + trailing digits"
+    // pattern (e.g. "password123", "qwerty99"). We match the whole string or the
+    // string with trailing digits stripped — NOT a substring, so a long
+    // passphrase that merely contains a common word is not penalised.
     let lower = pin.to_lowercase();
+    let stripped = lower.trim_end_matches(|c: char| c.is_ascii_digit());
     const WEAK: &[&str] = &[
         "password", "passw0rd", "12345678", "123456789", "1234567890",
-        "qwerty", "qwertyuiop", "letmein", "iloveyou", "admin123",
-        "abc12345", "11111111", "00000000", "password1", "trustno1",
-        "welcome1", "monkey123", "dragon123", "football",
+        "qwerty", "qwertyuiop", "letmein", "iloveyou", "admin",
+        "abc", "welcome", "monkey", "dragon", "football", "trustno",
     ];
-    if WEAK.iter().any(|w| lower == *w || lower.contains(w)) {
+    if WEAK.iter().any(|w| lower == *w || stripped == *w) {
         return Err("Password is too common — choose something harder to guess".into());
     }
 
@@ -1776,6 +1786,7 @@ impl VaultManager {
     }
 
     /// Mark that revalidation just succeeded
+    #[allow(dead_code)] // unused — app is fully free; no server revalidation
     pub fn mark_revalidated(&mut self) {
         if let Some(ref mut info) = self.license_info {
             info.last_revalidated = Utc::now().timestamp_millis();
@@ -1816,6 +1827,7 @@ impl VaultManager {
         }
     }
 
+    #[allow(dead_code)] // unused — app is fully free; no server revalidation
     pub fn get_stored_license_key(&self) -> Option<String> {
         self.license_info.as_ref().and_then(|i| i.key.clone())
     }
@@ -1955,6 +1967,7 @@ impl VaultManager {
             folders: vault.folders.clone(),
             files: vault.files.clone(),
             pages_json: vault.pages_json.clone(),
+            bookmarks_json: vault.bookmarks_json.clone(),
             watch_folder: vault.watch_folder.clone(),
         };
         let encrypted = encrypt_sensitive_metadata(&kek_z, &salt, &sensitive).ok()?;
@@ -1973,6 +1986,7 @@ impl VaultManager {
             f.folder = None;
         }
         redacted.pages_json = None;
+        redacted.bookmarks_json = None; // browsing history lives in the encrypted blob only
         redacted.watch_folder = None; // path lives in the encrypted blob only
         redacted.encrypted_metadata = Some(encrypted);
         Some(redacted)
@@ -2019,6 +2033,25 @@ impl VaultManager {
         let vid = self.active_vault_id.as_ref().ok_or("No vault unlocked")?;
         let vault = self.vaults.get(vid).ok_or("Vault not found")?;
         Ok(vault.pages_json.clone().unwrap_or_else(|| "[]".to_string()))
+    }
+
+    /// Store the private browser's Bookmark[] JSON inside the encrypted vault
+    /// bundle. Bookmarks are sensitive (they reveal visited sites), so they live
+    /// in the encrypted SensitiveMetadata blob just like pages.
+    pub fn save_bookmarks(&mut self, bookmarks_json: String) -> Result<(), String> {
+        self.touch_activity();
+        let vid = self.active_vault_id.clone().ok_or("No vault unlocked")?;
+        let vault = self.vaults.get_mut(&vid).ok_or("Vault not found")?;
+        vault.bookmarks_json = Some(bookmarks_json);
+        self.save_active();
+        Ok(())
+    }
+
+    /// Return the Bookmark[] JSON from the encrypted vault bundle (or "[]").
+    pub fn load_bookmarks(&self) -> Result<String, String> {
+        let vid = self.active_vault_id.as_ref().ok_or("No vault unlocked")?;
+        let vault = self.vaults.get(vid).ok_or("Vault not found")?;
+        Ok(vault.bookmarks_json.clone().unwrap_or_else(|| "[]".to_string()))
     }
 
     fn audit(&mut self, action: &str, details: &str) {
@@ -2078,6 +2111,7 @@ impl VaultManager {
                                     folders: vault.folders.clone(),
                                     files: vault.files.clone(),
                                     pages_json: vault.pages_json.clone(),
+                                    bookmarks_json: vault.bookmarks_json.clone(),
                                     watch_folder: vault.watch_folder.clone(),
                                 };
                                 if let Ok(encrypted) = encrypt_sensitive_metadata(&kek_z, &salt, &sensitive) {
@@ -2225,6 +2259,7 @@ impl VaultManager {
                 timestamp: Utc::now(),
             }],
             pages_json: None,
+            bookmarks_json: None,
             encrypted_metadata: None,
             lockout_failed_attempts: 0,
             lockout_last_failed_ts: None,
@@ -2481,6 +2516,7 @@ impl VaultManager {
                             vault.folders = sensitive.folders;
                             vault.audit_log = sensitive.audit_log;
                             vault.pages_json = sensitive.pages_json;
+                            vault.bookmarks_json = sensitive.bookmarks_json;
                             vault.watch_folder = sensitive.watch_folder;
                             vault.encrypted_metadata = None; // Clear to avoid re-processing
                             metadata_restored = true;
@@ -2504,6 +2540,7 @@ impl VaultManager {
                                         vault.folders = sensitive.folders;
                                         vault.audit_log = sensitive.audit_log;
                                         vault.pages_json = sensitive.pages_json;
+                                        vault.bookmarks_json = sensitive.bookmarks_json;
                                         vault.watch_folder = sensitive.watch_folder;
                                         vault.encrypted_metadata = None;
                                         metadata_restored = true;
@@ -2519,6 +2556,7 @@ impl VaultManager {
                                     vault.folders = disk_vault.folders;
                                     vault.audit_log = disk_vault.audit_log;
                                     vault.pages_json = disk_vault.pages_json;
+                                    vault.bookmarks_json = disk_vault.bookmarks_json;
                                     vault.encrypted_metadata = None;
                                 }
                             }
@@ -2603,6 +2641,7 @@ impl VaultManager {
                                 folders: vault.folders.clone(),
                                 files: vault.files.clone(),
                                 pages_json: vault.pages_json.clone(),
+                                bookmarks_json: vault.bookmarks_json.clone(),
                                 watch_folder: vault.watch_folder.clone(),
                             };
                             if let Ok(encrypted) = encrypt_sensitive_metadata(&kek_z, &salt, &sensitive) {
@@ -4051,6 +4090,7 @@ mod tests {
             lockout_last_failed_ts: None,
             encrypted_metadata: None,
             pages_json: None,
+            bookmarks_json: None,
             watch_folder: None,
         });
 
@@ -4126,6 +4166,7 @@ mod tests {
             lockout_last_failed_ts: None,
             encrypted_metadata: None,
             pages_json: None,
+            bookmarks_json: None,
             watch_folder: None,
         });
 

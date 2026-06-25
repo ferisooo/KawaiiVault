@@ -643,6 +643,16 @@ async fn load_pages(app: tauri::AppHandle) -> Result<String, String> {
     with_vm(app, |vm| vm.load_pages()).await
 }
 
+#[tauri::command]
+async fn save_bookmarks(app: tauri::AppHandle, bookmarks_json: String) -> Result<(), String> {
+    with_vm(app, move |vm| vm.save_bookmarks(bookmarks_json)).await
+}
+
+#[tauri::command]
+async fn load_bookmarks(app: tauri::AppHandle) -> Result<String, String> {
+    with_vm(app, |vm| vm.load_bookmarks()).await
+}
+
 // ── License commands ──
 
 #[tauri::command]
@@ -1727,6 +1737,8 @@ pub fn run() {
             export_encrypted_zip,
             save_pages,
             load_pages,
+            save_bookmarks,
+            load_bookmarks,
             get_license_status,
             validate_license,
             revalidate_license,

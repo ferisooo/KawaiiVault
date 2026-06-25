@@ -159,5 +159,9 @@ export function useTauri() {
     savePages: (pagesJson: string) => call<void>("save_pages", { pagesJson }),
     loadPages: () => call<string>("load_pages"),
 
+    // Encrypted private-browser bookmarks
+    saveBookmarks: (bookmarksJson: string) => call<void>("save_bookmarks", { bookmarksJson }),
+    loadBookmarks: () => call<string>("load_bookmarks"),
+
   };
 }
