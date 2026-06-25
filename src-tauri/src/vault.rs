@@ -423,7 +423,25 @@ fn hash_pin(pin: &str, key_file_data: Option<&[u8]>) -> Result<String, String> {
     Ok(hash.to_string())
 }
 
-/// Verify a PIN against a stored Argon2id hash.
+/// True only for a canonical legacy hash: exactly 64 lowercase hex characters
+/// (a bare SHA-256 digest). Anything else is not a hash this code ever wrote.
+fn is_legacy_sha256_hash(s: &str) -> bool {
+    s.len() == 64 && s.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+}
+
+/// Verify a PIN against a stored hash.
+///
+/// The supported, current format is an Argon2id PHC string. The unsalted
+/// single-round `SHA-256(pin)` format is LEGACY and only still accepted so that
+/// a vault created before the Argon2id migration can be unlocked exactly once —
+/// `unlock_vault` immediately re-hashes the PIN with Argon2id and persists it,
+/// so the weak representation is gone after the first successful unlock. The
+/// fallback cannot simply be deleted: the legacy hash *is* `SHA-256(pin)`, and
+/// there is no way to verify that against Argon2id without the user's PIN, so
+/// removing it would permanently lock legacy users out of their own vaults.
+///
+/// The fallback is tightly scoped (only a canonical 64-hex digest can reach it)
+/// and compared in constant time.
 fn verify_pin(pin: &str, key_file_data: Option<&[u8]>, stored_hash: &str) -> bool {
     let mut input = pin.as_bytes().to_vec();
     if let Some(kf) = key_file_data {
@@ -436,8 +454,12 @@ fn verify_pin(pin: &str, key_file_data: Option<&[u8]>, stored_hash: &str) -> boo
     let parsed = match PasswordHash::new(stored_hash) {
         Ok(h) => h,
         Err(_) => {
-            // Legacy SHA-256 hash fallback — constant-time comparison
-            // to prevent timing attacks on the hash value.
+            // Only a genuine legacy SHA-256 digest may use the weak path; any
+            // other non-PHC string is rejected outright.
+            if !is_legacy_sha256_hash(stored_hash) {
+                return false;
+            }
+            // Constant-time comparison to avoid leaking the digest via timing.
             let legacy = hash_string(pin);
             let a = legacy.as_bytes();
             let b = stored_hash.as_bytes();
