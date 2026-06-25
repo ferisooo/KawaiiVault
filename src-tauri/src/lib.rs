@@ -1258,7 +1258,12 @@ async fn browser_open(app: tauri::AppHandle, url: String) -> Result<(), String> 
                     .lock()
                     .ok()
                     .and_then(|vm| vm.get_vault_path().ok());
-                let Some(base) = base else { return false };
+                let Some(base) = base else {
+                    // No unlocked vault to import into — tell the user instead of
+                    // cancelling the download silently.
+                    let _ = app.emit("browser-download-failed", "unlock the vault first".to_string());
+                    return false;
+                };
                 let fname = destination
                     .file_name()
                     .map(|n| n.to_string_lossy().to_string())
@@ -1268,6 +1273,7 @@ async fn browser_open(app: tauri::AppHandle, url: String) -> Result<(), String> 
                     .join("temp")
                     .join(uuid::Uuid::new_v4().to_string());
                 if std::fs::create_dir_all(&dir).is_err() {
+                    let _ = app.emit("browser-download-failed", format!("{} (could not prepare a temp folder)", fname));
                     return false;
                 }
                 let dest = dir.join(fname);
@@ -1292,11 +1298,24 @@ async fn browser_open(app: tauri::AppHandle, url: String) -> Result<(), String> 
                     if success {
                         std::thread::spawn(move || import_browser_download(app, p));
                     } else {
+                        // The download failed (common when a site streams video in
+                        // pieces rather than serving a single file). Clean up and —
+                        // crucially — tell the user instead of failing silently.
                         let _ = std::fs::remove_file(&p);
                         if let Some(parent) = p.parent() {
                             let _ = std::fs::remove_dir(parent);
                         }
+                        let name = p.file_name()
+                            .map(|n| n.to_string_lossy().to_string())
+                            .unwrap_or_else(|| "download".to_string());
+                        let _ = app.emit(
+                            "browser-download-failed",
+                            format!("{} — the browser couldn't save this video. Many sites stream video in pieces that can't be downloaded this way; try the Media button to Grab direct video files.", name),
+                        );
                     }
+                } else {
+                    // No destination was ever recorded for this download.
+                    let _ = app.emit("browser-download-failed", "the browser couldn't start this download".to_string());
                 }
                 true
             }
