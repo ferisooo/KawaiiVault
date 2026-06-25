@@ -194,12 +194,17 @@ pub fn start(app: tauri::AppHandle, access_password: String) -> Result<PhoneServ
     // Build the TLS config (self-signed, ring provider).
     let (cert_der, key_der) = gen_cert(&lan_ip)?;
     let provider = rustls::crypto::ring::default_provider();
-    let tls_config = ServerConfig::builder_with_provider(Arc::new(provider))
+    let mut tls_config = ServerConfig::builder_with_provider(Arc::new(provider))
         .with_safe_default_protocol_versions()
         .map_err(|e| format!("TLS protocol setup failed: {}", e))?
         .with_no_client_auth()
         .with_single_cert(vec![cert_der], key_der)
         .map_err(|e| format!("TLS cert setup failed: {}", e))?;
+    // Advertise ONLY HTTP/1.1 via ALPN. This is a hand-rolled HTTP/1.1 server;
+    // without an explicit ALPN, an HTTP/2-capable browser can attempt h2 and
+    // then reject our HTTP/1.1 reply with ERR_INVALID_HTTP_RESPONSE. Pinning
+    // http/1.1 makes every modern browser speak HTTP/1.1 to us.
+    tls_config.alpn_protocols = vec![b"http/1.1".to_vec()];
     let tls_config = Arc::new(tls_config);
 
     // Bind a random high port.
