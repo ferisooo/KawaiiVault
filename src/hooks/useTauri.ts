@@ -146,6 +146,7 @@ export function useTauri() {
     browserReload: () => call<void>("browser_reload"),
     browserClose: () => call<void>("browser_close"),
     browserGrab: (url: string, referer?: string) => call<void>("browser_grab", { url, referer }),
+    browserGrabStream: (url: string, referer?: string) => call<void>("browser_grab_stream", { url, referer }),
 
     // Phone access: hardened LAN companion server (off by default)
     phoneServerStart: (accessPassword: string) =>

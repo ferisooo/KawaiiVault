@@ -1,5 +1,6 @@
 mod vault;
 mod phone_server;
+mod hls;
 
 use vault::{AuditEntry, BackupResult, FileStreamInfo, LicenseStatus, LockoutStatus, RestoreResult, SecurityConfig, VaultFile, VaultInfo, VaultManager, VaultSizeInfo, encrypted_bundle_size, decrypt_file_data, read_decrypted_range, is_watchable_media};
 use std::sync::Mutex;
@@ -1049,6 +1050,49 @@ const MEDIA_SCANNER_JS: &str = r#"
     } catch (e) { return "media"; }
   }
 
+  // ── HLS stream detection ──
+  // Streaming playlists (.m3u8) are fetched by the page's own JS, not present
+  // as an element src, so we hook fetch/XHR to capture them. They are saved via
+  // the backend HLS downloader (segments stitched server-side), not the
+  // direct-file grab path. Lighter ad filter than isAd() so a playlist named
+  // "media.m3u8" isn't wrongly dropped as a stream fragment.
+  var STREAMS = {};
+  function streamIsAd(url) {
+    if (/^(blob:|data:|about:)/i.test(url)) return true;
+    var h = hostOf(url);
+    for (var i = 0; i < AD_HOSTS.length; i++) {
+      var d = AD_HOSTS[i].trim();
+      if (h === d || h.endsWith("." + d)) return true;
+    }
+    return false;
+  }
+  function noteStream(u) {
+    try {
+      if (!u) return;
+      var abs = new URL(u, location.href).href;
+      if (/\.m3u8(\?|#|$)/i.test(abs) && !streamIsAd(abs) && !STREAMS[abs]) {
+        STREAMS[abs] = 1;
+        report();
+      }
+    } catch (e) {}
+  }
+  try {
+    var _fetch = window.fetch;
+    if (_fetch) {
+      window.fetch = function (input) {
+        try { noteStream(typeof input === "string" ? input : (input && input.url)); } catch (e) {}
+        return _fetch.apply(this, arguments);
+      };
+    }
+  } catch (e) {}
+  try {
+    var _xopen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function (method, url) {
+      try { noteStream(url); } catch (e) {}
+      return _xopen.apply(this, arguments);
+    };
+  } catch (e) {}
+
   function collect() {
     var out = [];
     var seen = {};
@@ -1080,6 +1124,12 @@ const MEDIA_SCANNER_JS: &str = r#"
       var href = links[k].href;
       if (MEDIA_EXT_RE.test(href)) push(href, /\.(mp3|m4a|aac|flac|ogg|wav|opus)/i.test(href) ? "audio" : "video", null);
     }
+    // Captured HLS playlists (saved via the backend stream downloader).
+    Object.keys(STREAMS).forEach(function (u) {
+      if (seen[u] || out.length >= 50) return;
+      seen[u] = 1;
+      out.push({ url: u, kind: "stream", label: fnameOf(u) || "stream", w: 0, h: 0, dur: 0 });
+    });
     return out.slice(0, 50);
   }
 
@@ -1485,6 +1535,58 @@ async fn browser_grab(app: tauri::AppHandle, url: String, referer: Option<String
         .map_err(|e| e.to_string())
 }
 
+/// Download an HLS (.m3u8) stream into the vault. Fetches + decrypts + stitches
+/// the segments into one file in the vault temp dir, then imports it through the
+/// same encrypted pipeline as any other grab (nothing lands in Downloads).
+/// Emits `browser-download-imported` / `browser-download-failed` like the other
+/// download paths, plus `browser-stream-progress` while it runs.
+#[tauri::command]
+async fn browser_grab_stream(app: tauri::AppHandle, url: String, referer: Option<String>) -> Result<(), String> {
+    let parsed = parse_browser_url(&url)?;
+
+    // Resolve temp destination (requires an unlocked vault).
+    let dest = {
+        let state = app.state::<AppState>();
+        let vm = state.vault_manager.lock().map_err(|e| e.to_string())?;
+        if !vm.is_unlocked() {
+            return Err("No vault unlocked".to_string());
+        }
+        let base = vm.get_vault_path()?;
+        drop(vm);
+        let dir = std::path::PathBuf::from(base)
+            .join("temp")
+            .join(uuid::Uuid::new_v4().to_string());
+        std::fs::create_dir_all(&dir).map_err(|e| format!("Create temp dir: {}", e))?;
+        // Concatenated HLS segments are an MPEG-TS stream; .ts imports/plays fine.
+        dir.join("stream.ts")
+    };
+
+    let cleanup = |dest: &std::path::Path| {
+        let _ = std::fs::remove_file(dest);
+        if let Some(parent) = dest.parent() { let _ = std::fs::remove_dir(parent); }
+    };
+
+    let client = reqwest::Client::new();
+    let progress_app = app.clone();
+    let progress = move |done: usize, total: usize| {
+        let _ = progress_app.emit("browser-stream-progress", serde_json::json!({ "done": done, "total": total }));
+    };
+
+    let dl = hls::download_hls(&client, parsed.as_str(), referer.as_deref(), &dest, Some(&progress)).await;
+    if let Err(e) = dl {
+        cleanup(&dest);
+        // Report through the same channel the UI already listens on.
+        let _ = app.emit("browser-download-failed", format!("stream — {}", e));
+        return Err(e);
+    }
+
+    // Import (and shred the temp) on a blocking thread — same path as a
+    // captured browser download, including the imported/failed events.
+    tauri::async_runtime::spawn_blocking(move || import_browser_download(app, dest))
+        .await
+        .map_err(|e| e.to_string())
+}
+
 // ── Security hardening ──
 
 /// Prevent core dumps from leaking sensitive memory
@@ -1753,6 +1855,7 @@ pub fn run() {
             phone_server_stop,
             phone_server_status,
             browser_grab,
+            browser_grab_stream,
             export_encrypted_zip,
             save_pages,
             load_pages,

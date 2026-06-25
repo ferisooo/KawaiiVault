@@ -1843,6 +1843,10 @@ export default function App() {
                             store.notify("Grabbing media into vault…", "info");
                             tauri.browserGrab(url, referer ?? undefined).catch((e) => store.notify(String(e), "error"));
                           }}
+                          onGrabStream={(url, referer) => {
+                            store.notify("Saving stream into vault — this can take a while…", "info");
+                            tauri.browserGrabStream(url, referer ?? undefined).catch((e) => store.notify(String(e), "error"));
+                          }}
                           loadBookmarks={() => tauri.loadBookmarks()}
                           saveBookmarks={(json) => tauri.saveBookmarks(json)}
                         />

@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, RotateCw, Globe, X, ShieldCheck, Video, Music, Download, Star, Bookmark, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, RotateCw, Globe, X, ShieldCheck, Video, Music, Download, Star, Bookmark, Trash2, Film } from "lucide-react";
 import CyberButton from "./CyberButton";
 import type { ThemeMode } from "../hooks/useThemeMode";
 
 export interface DetectedMedia {
   url: string;
-  kind: "video" | "audio";
+  kind: "video" | "audio" | "stream";
   label: string;
   w?: number;
   h?: number;
@@ -27,6 +27,8 @@ interface Props {
   onReload: () => void;
   onClose: () => void;
   onGrab: (url: string, referer: string | null) => void;
+  /** Save a detected HLS (.m3u8) stream via the backend stream downloader. */
+  onGrabStream: (url: string, referer: string | null) => void;
   /** Load persisted bookmarks JSON (encrypted in the vault). Optional for demo mode. */
   loadBookmarks?: () => Promise<string>;
   /** Persist bookmarks JSON (encrypted in the vault). Optional for demo mode. */
@@ -63,12 +65,13 @@ export function toBrowserUrl(input: string): string | null {
  * can grab it straight into the vault. Downloads never touch the disk
  * unencrypted.
  */
-export default function VaultBrowserBar({ themeMode = "cyberpunk", onOpen, onBack, onForward, onReload, onClose, onGrab, loadBookmarks, saveBookmarks }: Props) {
+export default function VaultBrowserBar({ themeMode = "cyberpunk", onOpen, onBack, onForward, onReload, onClose, onGrab, onGrabStream, loadBookmarks, saveBookmarks }: Props) {
   const [input, setInput] = useState("");
   const [currentUrl, setCurrentUrl] = useState<string | null>(null);
   const [media, setMedia] = useState<DetectedMedia[]>([]);
   const [showMedia, setShowMedia] = useState(false);
   const [grabbed, setGrabbed] = useState<Set<string>>(new Set());
+  const [streamProgress, setStreamProgress] = useState<{ done: number; total: number } | null>(null);
   const [bookmarks, setBookmarks] = useState<BrowserBookmark[]>([]);
   const [showBookmarks, setShowBookmarks] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -120,6 +123,7 @@ export default function VaultBrowserBar({ themeMode = "cyberpunk", onOpen, onBac
   useEffect(() => {
     let unNav: (() => void) | undefined;
     let unMedia: (() => void) | undefined;
+    let unProg: (() => void) | undefined;
     (async () => {
       try {
         const { listen } = await import("@tauri-apps/api/event");
@@ -129,14 +133,18 @@ export default function VaultBrowserBar({ themeMode = "cyberpunk", onOpen, onBac
           setMedia([]);
           setShowMedia(false);
           setGrabbed(new Set());
+          setStreamProgress(null);
         });
         unMedia = await listen<{ url: string; items: DetectedMedia[] }>("browser-media-found", (e) => {
           const items = (e.payload?.items ?? []).filter((m) => m && m.url);
           setMedia(items);
         });
+        unProg = await listen<{ done: number; total: number }>("browser-stream-progress", (e) => {
+          if (e.payload) setStreamProgress({ done: e.payload.done, total: e.payload.total });
+        });
       } catch { /* events unavailable (demo mode) */ }
     })();
-    return () => { unNav?.(); unMedia?.(); };
+    return () => { unNav?.(); unMedia?.(); unProg?.(); };
   }, []);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
@@ -147,7 +155,12 @@ export default function VaultBrowserBar({ themeMode = "cyberpunk", onOpen, onBac
   };
 
   const grab = (m: DetectedMedia) => {
-    onGrab(m.url, currentUrl);
+    if (m.kind === "stream") {
+      setStreamProgress({ done: 0, total: 0 });
+      onGrabStream(m.url, currentUrl);
+    } else {
+      onGrab(m.url, currentUrl);
+    }
     setGrabbed((prev) => new Set(prev).add(m.url));
   };
 
@@ -245,24 +258,33 @@ export default function VaultBrowserBar({ themeMode = "cyberpunk", onOpen, onBac
             <div className="max-h-48 overflow-y-auto px-3 py-2 space-y-1">
               {media.map((m) => {
                 const isGrabbed = grabbed.has(m.url);
+                const isStream = m.kind === "stream";
+                // Live progress text for an in-flight stream save.
+                const streamLabel = isStream && isGrabbed && streamProgress
+                  ? (streamProgress.total > 0 ? `Saving ${streamProgress.done}/${streamProgress.total}` : "Saving…")
+                  : null;
                 return (
                   <div key={m.url} className="flex items-center gap-2 px-2 py-1.5 rounded-sm bg-[var(--color-cyber-black)]/40 hover:bg-[var(--color-cyber-black)]/70 transition-colors">
                     {m.kind === "audio"
                       ? <Music size={15} className="text-[var(--color-neon-primary)] shrink-0" />
-                      : <Video size={15} className="text-[var(--color-neon-primary)] shrink-0" />}
+                      : isStream
+                        ? <Film size={15} className="text-[var(--color-neon-primary)] shrink-0" />
+                        : <Video size={15} className="text-[var(--color-neon-primary)] shrink-0" />}
                     <span className="font-mono text-[17px] text-[var(--color-cyber-text)] truncate flex-1" title={m.url}>
                       {m.label}
-                      {m.w && m.h ? <span className="text-[var(--color-cyber-muted)]"> · {m.w}×{m.h}</span> : null}
+                      {isStream
+                        ? <span className="text-[var(--color-cyber-muted)]"> · stream</span>
+                        : (m.w && m.h ? <span className="text-[var(--color-cyber-muted)]"> · {m.w}×{m.h}</span> : null)}
                     </span>
                     <CyberButton
                       themeMode={themeMode}
                       variant={isGrabbed ? "ghost" : "secondary"}
                       size="sm"
                       icon={<Download size={15} />}
-                      onClick={() => grab(m)}
-                      title={isGrabbed ? "Sent to vault" : "Save to vault"}
+                      onClick={() => { if (!isGrabbed) grab(m); }}
+                      title={isStream ? "Save this stream to the vault (downloads & stitches the segments)" : (isGrabbed ? "Sent to vault" : "Save to vault")}
                     >
-                      {isGrabbed ? "Sent" : "Grab"}
+                      {isGrabbed ? (streamLabel ?? "Sent") : (isStream ? "Save stream" : "Grab")}
                     </CyberButton>
                   </div>
                 );
