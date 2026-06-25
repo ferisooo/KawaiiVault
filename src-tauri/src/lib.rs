@@ -1532,73 +1532,6 @@ fn disable_core_dumps() {
     }
 }
 
-/// Detect debugger attachment using multiple methods.
-/// Returns true if any debugger is detected.
-fn is_debugger_attached() -> bool {
-    #[cfg(target_os = "windows")]
-    {
-        extern "system" {
-            fn IsDebuggerPresent() -> i32;
-            fn CheckRemoteDebuggerPresent(hProcess: isize, pbDebuggerPresent: *mut i32) -> i32;
-        }
-        unsafe {
-            // Method 1: kernel32 IsDebuggerPresent (PEB flag)
-            if IsDebuggerPresent() != 0 {
-                return true;
-            }
-            // Method 2: CheckRemoteDebuggerPresent (catches attached debuggers)
-            let mut is_remote: i32 = 0;
-            CheckRemoteDebuggerPresent(-1isize, &mut is_remote); // -1 = current process pseudo-handle
-            if is_remote != 0 {
-                return true;
-            }
-        }
-    }
-    #[cfg(target_os = "linux")]
-    {
-        if let Ok(status) = std::fs::read_to_string("/proc/self/status") {
-            for line in status.lines() {
-                if line.starts_with("TracerPid:") {
-                    let pid_str = line.split(':').nth(1).unwrap_or("0").trim();
-                    if let Ok(pid) = pid_str.parse::<u64>() {
-                        if pid != 0 {
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    #[cfg(target_os = "macos")]
-    {
-        use std::mem;
-        let mut info: libc::kinfo_proc = unsafe { mem::zeroed() };
-        let mut size = mem::size_of::<libc::kinfo_proc>();
-        let mut mib: [i32; 4] = [
-            libc::CTL_KERN,
-            libc::KERN_PROC,
-            libc::KERN_PROC_PID,
-            std::process::id() as i32,
-        ];
-        unsafe {
-            if libc::sysctl(
-                mib.as_mut_ptr(),
-                4,
-                &mut info as *mut _ as *mut libc::c_void,
-                &mut size,
-                std::ptr::null_mut(),
-                0,
-            ) == 0
-            {
-                if info.kp_proc.p_flag & libc::P_TRACED != 0 {
-                    return true;
-                }
-            }
-        }
-    }
-    false
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -1647,22 +1580,14 @@ pub fn run() {
                 });
             }
 
-            // Anti-debug: silently exit if a debugger is attached (release only)
-            if !cfg!(debug_assertions) && is_debugger_attached() {
-                std::process::exit(1);
-            }
-
-            // Background anti-debug: keep checking every 2 seconds (release only)
-            if !cfg!(debug_assertions) {
-                std::thread::spawn(|| {
-                    loop {
-                        std::thread::sleep(std::time::Duration::from_secs(2));
-                        if is_debugger_attached() {
-                            std::process::exit(1);
-                        }
-                    }
-                });
-            }
+            // NOTE: The previous anti-debugger checks (silent process::exit on
+            // detecting a debugger, plus a 2s background re-check) were removed.
+            // They did not meaningfully deter an attacker — anyone who can
+            // attach a debugger can also patch out the check — yet they would
+            // silently kill the app for legitimate users running it under a
+            // profiler, crash reporter, or some endpoint security agents.
+            // Real protection comes from the encryption + auto-lock, not from
+            // refusing to run while observed.
 
             if cfg!(debug_assertions) {
                 app.handle().plugin(
