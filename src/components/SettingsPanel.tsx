@@ -569,12 +569,14 @@ const FEATURES_CONTENT = () => (
 
     <div>
       <h3 className="text-[var(--color-neon-bright)] uppercase tracking-wider mb-2 font-bold">Duress Password</h3>
-      <p>You can set a second "panic" password. If you're ever forced to open your vault, entering this password silently destroys everything and shows a "vault not found" message — as if nothing was ever there. Your files are overwritten with random junk before being deleted.</p>
+      <p>You can set a second "panic" password. If you're ever forced to open your vault, entering this password silently destroys everything and shows a "vault not found" message — as if nothing was ever there. The vault file is overwritten with random junk and then deleted.</p>
+      <p className="mt-2 text-amber-400/90">Honest caveat: overwriting a file does <span className="font-bold">not</span> guarantee the data is unrecoverable on modern SSDs or copy-on-write filesystems (the drive may keep the old blocks elsewhere), and it cannot touch copies that already left this device — backups, cloud sync, or a forensic disk image taken earlier. Treat this as "destroys the working vault," not as a guarantee against an attacker who already imaged your drive.</p>
     </div>
 
     <div>
       <h3 className="text-[var(--color-neon-bright)] uppercase tracking-wider mb-2 font-bold">Self-Destruct</h3>
-      <p>If someone tries to guess your password, the vault keeps count. After too many wrong guesses (you choose how many — between 3 and 20), the vault permanently destroys itself. Restarting the app doesn't reset the counter.</p>
+      <p>If someone tries to guess your password, the vault keeps count. After too many wrong guesses (you choose how many — between 3 and 20), the vault destroys itself the same way the duress password does. Restarting the app doesn't reset the counter.</p>
+      <p className="mt-2 text-amber-400/90">The same caveat as the duress password applies: the overwrite-then-delete bounds the working copy, but is not a guarantee of forensic erasure on SSDs/CoW storage and does not remove backups or earlier disk images.</p>
     </div>
 
     <div>
@@ -589,7 +591,7 @@ const FEATURES_CONTENT = () => (
 
     <div>
       <h3 className="text-[var(--color-neon-bright)] uppercase tracking-wider mb-2 font-bold">Memory Protection</h3>
-      <p>While you're using the vault, your sensitive data is scrambled in memory so other programs can't easily snoop on it. The moment you lock the vault, everything is wiped from memory completely.</p>
+      <p>While the vault is unlocked, keys and sensitive bytes are kept lightly obfuscated in memory and locked so they aren't written to the swap/page file, and they're wiped the moment you lock the vault. This bounds accidental disk leakage and casual snooping — but it is <span className="text-amber-400">not</span> a defense against an attacker who can already read this app's memory (e.g. with admin/root or a debugger); anything in RAM is recoverable in that case.</p>
     </div>
 
     <div>

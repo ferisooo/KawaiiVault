@@ -2263,7 +2263,12 @@ impl VaultManager {
             ek.zeroize();
         }
 
-        // Overwrite bundle with random bytes before deleting to resist forensic recovery
+        // Best-effort overwrite of the bundle with random bytes before deleting.
+        // NOTE: this only reliably destroys the data on traditional spinning
+        // disks. On SSDs (wear-leveling) and copy-on-write filesystems the old
+        // blocks may survive elsewhere, and it cannot touch backups or copies
+        // that already left this machine. It bounds the working copy, not a
+        // forensic guarantee.
         if let Some(bundle_name) = self.vault_bundles.remove(vault_id) {
             let bundle_path = self.vaults_dir.join(&bundle_name);
             if let Ok(meta) = fs::metadata(&bundle_path) {
@@ -2291,7 +2296,9 @@ impl VaultManager {
     }
 
     /// Helper to delete a vault's on-disk bundle (used by duress/self-destruct).
-    /// Overwrites the file with random data before deletion to resist forensic recovery.
+    /// Best-effort: overwrites the file with random data before deletion. This
+    /// is reliable on spinning disks but NOT guaranteed on SSDs / copy-on-write
+    /// filesystems, and does not remove backups or earlier disk images.
     fn destroy_vault_on_disk(&mut self, vault_id: &str) {
         self.vaults.remove(vault_id);
         self.lockout_trackers.remove(vault_id);
@@ -2305,7 +2312,8 @@ impl VaultManager {
         }
         if let Some(bundle_name) = self.vault_bundles.remove(vault_id) {
             let bundle_path = self.vaults_dir.join(&bundle_name);
-            // Overwrite bundle with random bytes before deleting to resist forensic recovery
+            // Best-effort overwrite (see note on destroy_vault_on_disk): bounds
+            // the working copy; not a forensic guarantee on SSD/CoW storage.
             if let Ok(meta) = fs::metadata(&bundle_path) {
                 if let Ok(mut file) = fs::OpenOptions::new().write(true).open(&bundle_path) {
                     let size = meta.len() as usize;
