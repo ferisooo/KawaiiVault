@@ -911,6 +911,68 @@ fn categorize_extension(ext: &str) -> String {
     }
 }
 
+/// Best-effort file-type detection from the leading "magic" bytes, for downloads
+/// that arrive without a usable extension (common with in-page video "Download"
+/// buttons, e.g. a file literally named "videoplayback"). Returns a canonical
+/// extension, or None if unrecognized. Used only as a fallback when the
+/// filename gives us nothing categorizable — a real extension always wins.
+fn sniff_extension(data: &[u8]) -> Option<&'static str> {
+    let len = data.len();
+    let starts = |sig: &[u8]| len >= sig.len() && &data[..sig.len()] == sig;
+
+    // ISO base media (mp4 / mov / m4v / m4a): "ftyp" box at offset 4.
+    if len >= 12 && &data[4..8] == b"ftyp" {
+        let brand = &data[8..12];
+        if brand == b"M4A " {
+            return Some("m4a");
+        }
+        if &brand[..2] == b"qt" {
+            return Some("mov");
+        }
+        return Some("mp4");
+    }
+    if starts(&[0x1A, 0x45, 0xDF, 0xA3]) {
+        return Some("webm"); // EBML (webm/mkv) — both categorize as Videos
+    }
+    if starts(b"\x89PNG\r\n\x1a\n") {
+        return Some("png");
+    }
+    if starts(&[0xFF, 0xD8, 0xFF]) {
+        return Some("jpg");
+    }
+    if starts(b"GIF8") {
+        return Some("gif");
+    }
+    if starts(b"OggS") {
+        return Some("ogg");
+    }
+    if starts(b"fLaC") {
+        return Some("flac");
+    }
+    if starts(b"%PDF") {
+        return Some("pdf");
+    }
+    if starts(b"ID3") || (len >= 2 && data[0] == 0xFF && (data[1] & 0xE0) == 0xE0) {
+        return Some("mp3");
+    }
+    if len >= 12 && &data[0..4] == b"RIFF" {
+        match &data[8..12] {
+            b"WEBP" => return Some("webp"),
+            b"WAVE" => return Some("wav"),
+            b"AVI " => return Some("avi"),
+            _ => {}
+        }
+    }
+    if starts(b"BM") {
+        return Some("bmp");
+    }
+    // MPEG-TS: 0x47 sync byte repeats every 188 bytes.
+    if len > 188 && data[0] == 0x47 && data[188] == 0x47 {
+        return Some("ts");
+    }
+    None
+}
+
 fn dirs_or_default() -> PathBuf {
     #[cfg(target_os = "windows")]
     {
@@ -3036,7 +3098,7 @@ impl VaultManager {
         // Strip any path separators / null bytes defensively.
         let name = safe_basename(&raw_name).unwrap_or_else(|_| "unknown".to_string());
 
-        let ext = path
+        let mut ext = path
             .extension()
             .map(|e| e.to_string_lossy().to_string())
             .unwrap_or_default();
@@ -3047,6 +3109,22 @@ impl VaultManager {
         };
         let size = data.len() as u64;
         let hash = hash_bytes(&data);
+
+        // In-page video "Download" buttons often save with no usable extension
+        // (e.g. "videoplayback"), which would categorize the file as "Other" and
+        // leave it invisible on media pages. Sniff the content so it's recognised
+        // as the real media type. A genuine, recognised extension always wins.
+        if ext.is_empty() || categorize_extension(&ext) == "Other" {
+            if let Some(sniffed) = sniff_extension(&data) {
+                ext = sniffed.to_string();
+            }
+        }
+        // Give the display/export name a matching extension if it lacks one.
+        let name = if !name.contains('.') && !ext.is_empty() {
+            format!("{}.{}", name, ext)
+        } else {
+            name
+        };
 
         // Duplicate of a file already in the vault: do NOT remove and
         // replace the old entry. Blob offsets are derived from the file
@@ -4028,6 +4106,21 @@ mod tests {
     use super::*;
     use std::io::Read as _;
     use tempfile::TempDir;
+
+    #[test]
+    fn sniff_recognizes_common_media() {
+        // mp4 (ftyp box at offset 4)
+        let mp4 = [0, 0, 0, 0x18, b'f', b't', b'y', b'p', b'm', b'p', b'4', b'2', 0, 0, 0, 0];
+        assert_eq!(sniff_extension(&mp4), Some("mp4"));
+        assert_eq!(categorize_extension(sniff_extension(&mp4).unwrap()), "Videos");
+        // webm/mkv (EBML)
+        assert_eq!(sniff_extension(&[0x1A, 0x45, 0xDF, 0xA3, 1, 2, 3]), Some("webm"));
+        // jpg / png
+        assert_eq!(sniff_extension(&[0xFF, 0xD8, 0xFF, 0xE0]), Some("jpg"));
+        assert_eq!(sniff_extension(b"\x89PNG\r\n\x1a\n....."), Some("png"));
+        // unknown
+        assert_eq!(sniff_extension(b"not a known header at all"), None);
+    }
 
     /// Build a minimal VaultManager backed by a temporary directory (no migration, no load).
     fn test_manager(dir: &Path) -> VaultManager {
