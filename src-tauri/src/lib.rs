@@ -814,15 +814,62 @@ fn validate_external_path(path: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// Open a URL or filesystem path with the OS default handler WITHOUT going
+/// through a command interpreter.
+///
+/// On Windows this calls ShellExecuteW("open", target) directly instead of
+/// `cmd /c start "" <target>`. The old form invoked cmd.exe, whose argument
+/// parser treats `& | ^ < > ( )` as control characters — and those are all
+/// legitimate in real URLs (query strings) and filenames, so we could neither
+/// safely pass them nor filter them out. ShellExecuteW receives the target as
+/// a single wide string handled by the shell API, so there is no command line
+/// to inject into. On macOS/Linux the target is already passed as a single
+/// argv entry to `open`/`xdg-open` (no shell), which is safe as-is.
+#[cfg(target_os = "windows")]
+fn shell_open(target: &str) -> Result<(), String> {
+    use std::ffi::OsStr;
+    use std::iter::once;
+    use std::os::windows::ffi::OsStrExt;
+
+    #[link(name = "shell32")]
+    extern "system" {
+        fn ShellExecuteW(
+            hwnd: isize,
+            lp_operation: *const u16,
+            lp_file: *const u16,
+            lp_parameters: *const u16,
+            lp_directory: *const u16,
+            n_show_cmd: i32,
+        ) -> isize;
+    }
+
+    const SW_SHOWNORMAL: i32 = 1;
+    let op: Vec<u16> = OsStr::new("open").encode_wide().chain(once(0)).collect();
+    let file: Vec<u16> = OsStr::new(target).encode_wide().chain(once(0)).collect();
+    // ShellExecuteW returns a value > 32 on success.
+    let result = unsafe {
+        ShellExecuteW(
+            0,
+            op.as_ptr(),
+            file.as_ptr(),
+            std::ptr::null(),
+            std::ptr::null(),
+            SW_SHOWNORMAL,
+        )
+    };
+    if result > 32 {
+        Ok(())
+    } else {
+        Err(format!("Failed to open (ShellExecute code {})", result))
+    }
+}
+
 #[tauri::command]
 fn open_url_in_browser(url: String) -> Result<(), String> {
     validate_external_url(&url)?;
     #[cfg(target_os = "windows")]
     {
-        std::process::Command::new("cmd")
-            .args(["/c", "start", "", &url])
-            .spawn()
-            .map_err(|e| e.to_string())?;
+        shell_open(&url)?;
     }
     #[cfg(target_os = "macos")]
     {
@@ -846,10 +893,7 @@ fn open_file_with_default_app(path: String) -> Result<(), String> {
     validate_external_path(&path)?;
     #[cfg(target_os = "windows")]
     {
-        std::process::Command::new("cmd")
-            .args(["/c", "start", "", &path])
-            .spawn()
-            .map_err(|e| e.to_string())?;
+        shell_open(&path)?;
     }
     #[cfg(target_os = "macos")]
     {
