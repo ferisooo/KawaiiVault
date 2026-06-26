@@ -155,111 +155,127 @@ export function useThumbnails(config: ThumbnailCacheConfig = {}) {
     if (!fileId) return;
     videoProcessingRef.current = true;
 
+    const finishAndNext = () => {
+      videoCapturePendingRef.current.delete(fileId);
+      videoFileTypeMapRef.current.delete(fileId);
+      videoProcessingRef.current = false;
+      processVideoQueue();
+    };
+
     getCachedThumbnail(fileId).then((cached) => {
       if (cached) {
-        const url = URL.createObjectURL(cached);
-        addThumbnail(fileId, url);
-        videoCapturePendingRef.current.delete(fileId);
-        videoProcessingRef.current = false;
-        processVideoQueue();
+        addThumbnail(fileId, URL.createObjectURL(cached));
+        finishAndNext();
         return;
       }
 
-      const video = document.createElement("video");
-      video.muted = true;
-      video.playsInline = true;
-      video.preload = "auto";
-      // Do NOT set crossOrigin — cvlt:// is same-origin; the attribute
-      // taints the canvas on WebView2/WKWebView and blocks frame capture.
-      // Video must be in DOM for browsers to reliably fire load/seek events
-      video.style.position = "fixed";
-      video.style.opacity = "0";
-      video.style.pointerEvents = "none";
-      video.style.width = "1px";
-      video.style.height = "1px";
-      video.style.top = "-9999px";
-      document.body.appendChild(video);
+      const fileUrl = convertFileSrc("file/" + fileId, "cvlt");
 
-      // Timeout: if video doesn't load within 15s, give up and move on
-      const timeoutId = setTimeout(() => {
-        cleanup();
-        finishAndNext();
-      }, 15000);
+      // Capture the first frame with a hidden <video> + canvas. Two strategies,
+      // tried in order:
+      //   1. Stream the cvlt:// source with crossOrigin="anonymous". The backend
+      //      sends Access-Control-Allow-Origin on every stream response, so the
+      //      capture canvas is NOT tainted and no extra download is needed.
+      //   2. If that errors or comes back tainted (canvas.toBlob → null, which
+      //      is what produced the bare "MP4" placeholder), fetch the file as a
+      //      same-origin blob: URL — blob URLs can never taint a canvas — and
+      //      capture from that. The frame is cached, so this runs once per video.
+      const attempt = (useBlob: boolean) => {
+        const video = document.createElement("video");
+        video.muted = true;
+        video.playsInline = true;
+        video.preload = "auto";
+        if (!useBlob) video.crossOrigin = "anonymous";
+        // Must be in the DOM for browsers to reliably fire load/seek events.
+        video.style.cssText = "position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;top:-9999px";
+        document.body.appendChild(video);
 
-      const cleanup = () => {
-        clearTimeout(timeoutId);
-        video.removeEventListener("loadeddata", onLoadedData);
-        video.removeEventListener("seeked", onSeeked);
-        video.removeEventListener("error", onError);
-        video.pause();
-        video.removeAttribute("src");
-        while (video.firstChild) video.removeChild(video.firstChild);
-        video.load();
-        video.remove();
-        videoFileTypeMapRef.current.delete(fileId);
-      };
+        let objectUrl: string | null = null;
+        let settled = false;
 
-      const onSeeked = () => {
-        try {
-          const sz = thumbResRef.current;
-          const canvas = document.createElement("canvas");
-          canvas.width = sz;
-          canvas.height = sz;
-          const ctx = canvas.getContext("2d");
-          if (!ctx) { cleanup(); finishAndNext(); return; }
-          ctx.fillStyle = "#161616";
-          ctx.fillRect(0, 0, sz, sz);
-          const scale = Math.max(sz / video.videoWidth, sz / video.videoHeight);
-          const w = Math.round(video.videoWidth * scale);
-          const h = Math.round(video.videoHeight * scale);
-          ctx.drawImage(video, Math.round((sz - w) / 2), Math.round((sz - h) / 2), w, h);
-          canvas.toBlob((blob) => {
-            cleanup();
-            if (blob) {
-              const url = URL.createObjectURL(blob);
-              addThumbnail(fileId, url);
-              setCachedThumbnail(fileId, blob);
-            }
-            finishAndNext();
-          }, "image/webp", 0.75);
-        } catch {
+        const cleanup = () => {
+          clearTimeout(timeoutId);
+          video.removeEventListener("loadeddata", onLoadedData);
+          video.removeEventListener("seeked", onSeeked);
+          video.removeEventListener("error", onError);
+          video.pause();
+          video.removeAttribute("src");
+          while (video.firstChild) video.removeChild(video.firstChild);
+          video.load();
+          video.remove();
+          if (objectUrl) URL.revokeObjectURL(objectUrl);
+        };
+
+        // Capture failed for this attempt: fall back to the blob strategy once,
+        // otherwise give up and leave the placeholder.
+        const fail = () => {
+          if (settled) return;
+          settled = true;
           cleanup();
+          if (!useBlob) attempt(true);
+          else finishAndNext();
+        };
+
+        const succeed = (blob: Blob | null) => {
+          if (settled) return;
+          // A null blob means a tainted canvas — retry via the blob strategy.
+          if (!blob) { fail(); return; }
+          settled = true;
+          cleanup();
+          addThumbnail(fileId, URL.createObjectURL(blob));
+          setCachedThumbnail(fileId, blob);
           finishAndNext();
+        };
+
+        const timeoutId = setTimeout(fail, 15000);
+
+        const onLoadedData = () => { video.currentTime = 0.1; };
+
+        const onSeeked = () => {
+          try {
+            const sz = thumbResRef.current;
+            const canvas = document.createElement("canvas");
+            canvas.width = sz;
+            canvas.height = sz;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) { fail(); return; }
+            ctx.fillStyle = "#161616";
+            ctx.fillRect(0, 0, sz, sz);
+            if (video.videoWidth && video.videoHeight) {
+              const scale = Math.max(sz / video.videoWidth, sz / video.videoHeight);
+              const w = Math.round(video.videoWidth * scale);
+              const h = Math.round(video.videoHeight * scale);
+              ctx.drawImage(video, Math.round((sz - w) / 2), Math.round((sz - h) / 2), w, h);
+            }
+            canvas.toBlob((blob) => succeed(blob), "image/webp", 0.75);
+          } catch {
+            // Tainted canvas throws here on some engines — fall back.
+            fail();
+          }
+        };
+
+        const onError = () => { fail(); };
+
+        video.addEventListener("loadeddata", onLoadedData, { once: true });
+        video.addEventListener("seeked", onSeeked, { once: true });
+        video.addEventListener("error", onError, { once: true });
+
+        if (useBlob) {
+          fetch(fileUrl)
+            .then((r) => (r.ok ? r.blob() : Promise.reject(new Error("video fetch failed"))))
+            .then((blob) => {
+              objectUrl = URL.createObjectURL(blob);
+              video.src = objectUrl;
+              video.load();
+            })
+            .catch(() => fail());
+        } else {
+          video.src = fileUrl;
+          video.load();
         }
       };
 
-      const onLoadedData = () => {
-        video.currentTime = 0.1;
-      };
-
-      const onError = () => {
-        cleanup();
-        finishAndNext();
-      };
-
-      const finishAndNext = () => {
-        videoCapturePendingRef.current.delete(fileId);
-        videoProcessingRef.current = false;
-        processVideoQueue();
-      };
-
-      video.addEventListener("loadeddata", onLoadedData, { once: true });
-      video.addEventListener("seeked", onSeeked, { once: true });
-      video.addEventListener("error", onError, { once: true });
-
-      // Use <source> with MIME type hint — matches FullscreenViewer approach
-      // and ensures the browser codec resolver picks up the format correctly.
-      const ext = (videoFileTypeMapRef.current.get(fileId) || "mp4").toLowerCase();
-      const mimeMap: Record<string, string> = {
-        mp4: "video/mp4", webm: "video/webm", mov: "video/quicktime",
-        avi: "video/x-msvideo", mkv: "video/x-matroska",
-        flv: "video/x-flv", wmv: "video/x-ms-wmv",
-      };
-      const source = document.createElement("source");
-      source.src = convertFileSrc("file/" + fileId, "cvlt");
-      source.type = mimeMap[ext] || `video/${ext}`;
-      video.appendChild(source);
-      video.load();
+      attempt(false);
     });
   }, [addThumbnail]);
 
