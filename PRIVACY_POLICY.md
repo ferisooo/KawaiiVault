@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🔒 Privacy Policy — CyberVault
+# 🔒 Privacy Policy — Kawaii Vault
 
 **Last updated: June 20, 2026**
 
@@ -9,16 +9,16 @@
 ---
 
 > # ✨ Only made possible by **feris** ✨
-> ### 💜 CyberVault was **only made possible by feris's imagination**, brought to life with **Claude's work**. 💜
+> ### 💜 Kawaii Vault was **only made possible by feris's imagination**, brought to life with **Claude's work**. 💜
 > ### Contact: 👉 **[https://mez.ink/ferisooo](https://mez.ink/ferisooo)** 👈
 
 ---
 
 ## ❤️ The Short Version
 
-**feris does not collect anything from people using CyberVault.**
+**feris does not collect anything from people using Kawaii Vault.**
 
-CyberVault is a **local, offline-first** application. Your files, your password,
+Kawaii Vault is a **local, offline-first** application. Your files, your password,
 and everything you do in the app stay **on your own device**. feris has no
 servers, no analytics, no accounts, and no way to see, access, or receive any
 of your data. There is **nothing to collect, and nothing is collected.**
@@ -28,8 +28,8 @@ of your data. There is **nothing to collect, and nothing is collected.**
 ## 1. No Data Collection
 
 feris **does not collect, store, sell, share, transmit, or otherwise process
-any personal information or user data** from people using CyberVault.
-Specifically, CyberVault does **not**:
+any personal information or user data** from people using Kawaii Vault.
+Specifically, Kawaii Vault does **not**:
 
 - ❌ Collect your name, email, or any personal identifiers.
 - ❌ Require an account, sign-up, or login to feris.
@@ -43,7 +43,7 @@ Specifically, CyberVault does **not**:
 
 ## 2. Your Data Stays on Your Device
 
-CyberVault is designed to be **private by default**:
+Kawaii Vault is designed to be **private by default**:
 
 - All your files are stored **locally** on your own machine.
 - Files are **encrypted locally** and never leave your device in plain form.
@@ -74,7 +74,7 @@ them.
 
 ## 4. Third-Party Services & Components
 
-CyberVault is built with open-source technologies (such as Tauri, React, and
+Kawaii Vault is built with open-source technologies (such as Tauri, React, and
 Rust). feris does **not** embed any third-party analytics, advertising, or
 data-collection services in the Software.
 
@@ -88,7 +88,7 @@ one.
 
 ## 5. Children's Privacy
 
-CyberVault does not collect any data from anyone, including children. feris
+Kawaii Vault does not collect any data from anyone, including children. feris
 does not knowingly gather information from any user of any age, because **no
 information is gathered at all.**
 
@@ -96,7 +96,7 @@ information is gathered at all.**
 
 ## 6. Forks & Modified Versions
 
-This Privacy Policy describes the **original CyberVault** as released by feris.
+This Privacy Policy describes the **original Kawaii Vault** as released by feris.
 If you use a **forked or modified version** created by someone else, that
 version may behave differently. feris is **not responsible** for the privacy
 practices of any third-party fork or modification. Always review the privacy
@@ -115,7 +115,7 @@ operating system or the app itself.
 
 ## 8. Security
 
-CyberVault uses local encryption to protect your files. However, **no method of
+Kawaii Vault uses local encryption to protect your files. However, **no method of
 storage or security is 100% guaranteed.** You are responsible for keeping your
 device, password, and backups secure. See the
 [Terms of Service](./TERMS_OF_SERVICE.md) for the full disclaimer of warranties
@@ -139,6 +139,6 @@ Questions about privacy? Reach feris here:
 
 ### 💜 [https://mez.ink/ferisooo](https://mez.ink/ferisooo) 💜
 
-### CyberVault — concept & imagination by **feris**, built with **Claude**.
+### Kawaii Vault — concept & imagination by **feris**, built with **Claude**.
 
 </div>

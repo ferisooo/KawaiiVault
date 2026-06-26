@@ -53,7 +53,7 @@ function resetProFeatureStorage() {
 }
 
 export function useLicense(): [LicenseState, LicenseActions] {
-  // CyberVault is fully free: every Pro feature is unlocked for all users and
+  // Kawaii Vault is fully free: every Pro feature is unlocked for all users and
   // no license/Gumroad check is performed. isPro is hardcoded true.
   const [isPro] = useState(true);
   const [licenseKey, setLicenseKey] = useState<string | null>(null);

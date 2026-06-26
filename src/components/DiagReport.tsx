@@ -149,7 +149,7 @@ export default function DiagReport({
     // Build plain-text report for export
     const lines: string[] = [];
     lines.push("═══════════════════════════════════════════════════════════════");
-    lines.push("                   CYBERVAULT DIAGNOSTIC REPORT");
+    lines.push("                   KAWAII VAULT DIAGNOSTIC REPORT");
     lines.push("═══════════════════════════════════════════════════════════════");
     lines.push("");
     lines.push(`Generated: ${new Date().toLocaleString()}`);
@@ -196,7 +196,7 @@ export default function DiagReport({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `cybervault-diagnostic-report-${new Date().toISOString().slice(0, 10)}.txt`;
+    a.download = `kawaii-vault-diagnostic-report-${new Date().toISOString().slice(0, 10)}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };

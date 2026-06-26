@@ -1,21 +1,21 @@
 <div align="center">
 
-# About CyberVault
+# About Kawaii Vault
 
 </div>
 
 ---
 
 > # ✨ Only made possible by **feris** ✨
-> ### 💜 CyberVault was **only made possible by feris**. 💜
+> ### 💜 Kawaii Vault was **only made possible by feris**. 💜
 > ### Want to contact her? Here are her socials:
 > # 👉 **[https://mez.ink/ferisooo](https://mez.ink/ferisooo)** 👈
 
 ---
 
-## What is CyberVault?
+## What is Kawaii Vault?
 
-CyberVault is a privacy-first desktop file vault. It lets you store your most
+Kawaii Vault is a privacy-first desktop file vault. It lets you store your most
 sensitive files behind a locally-encrypted, password-protected vault wrapped in
 a sleek cyberpunk interface.
 
@@ -38,10 +38,10 @@ a sleek cyberpunk interface.
 
 <div align="center">
 
-### CyberVault was **only made possible by feris.**
+### Kawaii Vault was **only made possible by feris.**
 ### 💜 [https://mez.ink/ferisooo](https://mez.ink/ferisooo) 💜
 
-Every part of this project exists thanks to her. If you enjoy CyberVault,
+Every part of this project exists thanks to her. If you enjoy Kawaii Vault,
 please reach out and support her.
 
 </div>

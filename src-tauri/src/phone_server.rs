@@ -721,7 +721,7 @@ const MOBILE_HTML: &str = r#"<!doctype html>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <meta name="referrer" content="no-referrer"/>
-<title>CyberVault</title>
+<title>Kawaii Vault</title>
 <style>
   :root { --bg:#0a0a0f; --panel:#15151f; --line:#2a2a3a; --neon:#ff003c; --txt:#e8e8f0; --muted:#7a7a8a;
           --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px); }
@@ -772,7 +772,7 @@ const MOBILE_HTML: &str = r#"<!doctype html>
 </style></head>
 <body>
 <div id="login">
-  <h1>CYBERVAULT</h1>
+  <h1>KAWAII VAULT</h1>
   <p style="color:var(--muted);font-size:13px">Phone access — enter the access password set on your PC.</p>
   <input id="pw" type="password" inputmode="text" autocomplete="off" placeholder="Access password"/>
   <button onclick="login()">Unlock</button>

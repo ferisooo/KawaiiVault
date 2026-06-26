@@ -70,12 +70,12 @@ export default function LegalScreen({ onAccept }: Props) {
 
           <p className="mb-3">
             <strong className="text-white/70">1. The Basics</strong><br />
-            By using CyberVault, you're agreeing to these terms. If that doesn't work for you, no hard feelings — just don't use the app.
+            By using Kawaii Vault, you're agreeing to these terms. If that doesn't work for you, no hard feelings — just don't use the app.
           </p>
 
           <p className="mb-3">
             <strong className="text-white/70">2. Your License</strong><br />
-            You're free to use CyberVault for personal use. Just don't try to reverse-engineer, decompile, resell, or take it apart — that's off limits.
+            You're free to use Kawaii Vault for personal use. Just don't try to reverse-engineer, decompile, resell, or take it apart — that's off limits.
           </p>
 
           <p className="mb-3">
@@ -85,7 +85,7 @@ export default function LegalScreen({ onAccept }: Props) {
 
           <p className="mb-3">
             <strong className="text-white/70">4. Your Stuff, Your Responsibility</strong><br />
-            Your vault password, key files, and backups are on you. CyberVault encrypts everything locally — which is great for privacy, but it also means if you lose your password, I can't help you get back in. There is a "forgot password" option, but it will wipe all your data and start fresh.
+            Your vault password, key files, and backups are on you. Kawaii Vault encrypts everything locally — which is great for privacy, but it also means if you lose your password, I can't help you get back in. There is a "forgot password" option, but it will wipe all your data and start fresh.
           </p>
 
           <p className="mb-3">
@@ -100,12 +100,12 @@ export default function LegalScreen({ onAccept }: Props) {
 
           <p className="mb-3">
             <strong className="text-white/70">7. Updates</strong><br />
-            I may update the app or these terms from time to time. If you keep using CyberVault after a change, that counts as accepting the new terms.
+            I may update the app or these terms from time to time. If you keep using Kawaii Vault after a change, that counts as accepting the new terms.
           </p>
 
           <p className="mb-3">
             <strong className="text-white/70">8. Cutting Access</strong><br />
-            Since CyberVault runs entirely on your device with no accounts or servers, there's no access to revoke. Your data is yours — always.
+            Since Kawaii Vault runs entirely on your device with no accounts or servers, there's no access to revoke. Your data is yours — always.
           </p>
 
           <div className="border-t border-white/10 my-5" />
@@ -114,7 +114,7 @@ export default function LegalScreen({ onAccept }: Props) {
 
           <p className="mb-3">
             <strong className="text-white/70">1. Everything Stays on Your Device</strong><br />
-            CyberVault is local-first. Your vault data, passwords, notes, documents, and media are encrypted and stored entirely on your machine. I don't run any servers that hold your stuff.
+            Kawaii Vault is local-first. Your vault data, passwords, notes, documents, and media are encrypted and stored entirely on your machine. I don't run any servers that hold your stuff.
           </p>
 
           <p className="mb-3">
@@ -134,7 +134,7 @@ export default function LegalScreen({ onAccept }: Props) {
 
           <p className="mb-3">
             <strong className="text-white/70">5. Third-Party Services</strong><br />
-            Gumroad is the only outside service CyberVault talks to, and only for license verification. You might want to check out their privacy policy too.
+            Gumroad is the only outside service Kawaii Vault talks to, and only for license verification. You might want to check out their privacy policy too.
           </p>
 
           <p className="mb-3">

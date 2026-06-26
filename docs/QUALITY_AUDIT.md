@@ -1,4 +1,4 @@
-# CyberVault — Code Quality Audit
+# Kawaii Vault — Code Quality Audit
 
 Date: 2026-06-10 · Scope: full repository (Rust backend, React/TS frontend, build & repo config)
 

@@ -1753,7 +1753,7 @@ export default function App() {
                 onRenamePage={store.renamePage}
                 onLock={handleLock}
                 onSettings={() => store.update({ showSettings: true })}
-                vaultName={store.activeVault?.name || "CyberVault"}
+                vaultName={store.activeVault?.name || "Kawaii Vault"}
                 themeMode={themeMode}
               />
               </motion.div>

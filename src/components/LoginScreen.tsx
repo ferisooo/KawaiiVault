@@ -475,7 +475,7 @@ export default function LoginScreen({ onUnlock, notify, themeMode = "cyberpunk" 
           </motion.div>
 
           <h1 className="font-display text-[17px] font-bold tracking-[0.2em] uppercase neon-text animate-[neon-flicker_8s_ease-in-out_infinite]">
-            CyberVault
+            Kawaii Vault
           </h1>
           <p className="font-mono text-[17px] text-[var(--color-cyber-muted)] mt-2 tracking-widest">
             SECURE FILE ENCRYPTION SYSTEM v1.0

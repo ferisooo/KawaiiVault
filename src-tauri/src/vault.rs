@@ -1770,7 +1770,7 @@ impl VaultManager {
             protected_keys: HashMap::new(),
             encryption_keys: HashMap::new(),
             clipboard_expiry: None,
-            is_pro: true, // CyberVault is fully free — Pro always enabled
+            is_pro: true, // Kawaii Vault is fully free — Pro always enabled
             license_info: None,
         };
         mgr.load_all();
@@ -1831,7 +1831,7 @@ impl VaultManager {
     }
 
     fn refresh_pro_status(&mut self) {
-        // CyberVault is fully free — Pro is always on, no license key needed.
+        // Kawaii Vault is fully free — Pro is always on, no license key needed.
         self.is_pro = true;
     }
 
@@ -1879,7 +1879,7 @@ impl VaultManager {
     }
 
     pub fn get_license_status(&self) -> LicenseStatus {
-        // CyberVault is fully free — all Pro features are unlocked for everyone
+        // Kawaii Vault is fully free — all Pro features are unlocked for everyone
         // and no Gumroad license check is ever required.
         LicenseStatus {
             is_pro: true,
@@ -3853,7 +3853,7 @@ impl VaultManager {
         }
 
         let backup_vault = backup_vault_data
-            .ok_or("No vault metadata found in backup directory. Please select a valid CyberVault backup.")?;
+            .ok_or("No vault metadata found in backup directory. Please select a valid Kawaii Vault backup.")?;
 
         // Merge files from backup that don't already exist in current vault
         let mut restored_count: usize = 0;

@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🛡️ CyberVault
+# 🛡️ Kawaii Vault
 
 ### A private, encrypted, cyberpunk-styled file vault for your most personal files.
 
@@ -11,7 +11,7 @@
 ---
 
 > # ✨ Only made possible by **feris** ✨
-> ### 💜 CyberVault is built on **feris's idea and imagination**, brought to life with **Claude's work**. 💜
+> ### 💜 Kawaii Vault is built on **feris's idea and imagination**, brought to life with **Claude's work**. 💜
 > ### Want to say hi or support her? Here are her socials:
 > # 👉 **[https://mez.ink/ferisooo](https://mez.ink/ferisooo)** 👈
 >
@@ -40,7 +40,7 @@ These are the "okay, I *need* this" features — and every one of them is **free
   when they're no longer needed.
 
 ### 🕵️ Panic & stealth features you won't find in a normal "photo vault"
-- **🐍 Decoy Snake Game** — turn on stealth login and CyberVault disguises
+- **🐍 Decoy Snake Game** — turn on stealth login and Kawaii Vault disguises
   itself as a fully playable Snake game (9 modes, themes, power-ups,
   achievements). You secretly type your PIN while "playing." Anyone watching
   just sees a game.
@@ -81,12 +81,12 @@ These are the "okay, I *need* this" features — and every one of them is **free
 
 ---
 
-## 🆚 How CyberVault is different
+## 🆚 How Kawaii Vault is different
 
-Most "secure folder" or "photo vault" apps ask you to trust *them*. CyberVault
+Most "secure folder" or "photo vault" apps ask you to trust *them*. Kawaii Vault
 is built so you don't have to:
 
-| Other apps often... | CyberVault... |
+| Other apps often... | Kawaii Vault... |
 |---------------------|---------------|
 | Upload your files to "the cloud" | Keeps **everything on your device** |
 | Make you create an account | **No account, no email, no login at all** |
@@ -105,15 +105,15 @@ asking you to take their word for it.** See the [Privacy Policy](./PRIVACY_POLIC
 
 ## 🚀 Setup guide (for people who have *never* touched code)
 
-> 🪟 **CyberVault is built for Windows.** These steps (and the helper scripts)
+> 🪟 **Kawaii Vault is built for Windows.** These steps (and the helper scripts)
 > assume Windows 10 or 11.
 
 Don't worry — you don't need to "know how to program." Just follow the steps in
 order. ☕ Grab a drink; the very first launch takes a little while.
 
-### Step 1 — Install the free tools CyberVault needs
+### Step 1 — Install the free tools Kawaii Vault needs
 
-CyberVault is built from source, so you need a few free building blocks first.
+Kawaii Vault is built from source, so you need a few free building blocks first.
 Click each link, download, and run the installer with the **default options**:
 
 1. **Node.js** → <https://nodejs.org> — pick the button that says **"LTS"**.
@@ -125,15 +125,15 @@ Click each link, download, and run the installer with the **default options**:
 
 After installing, **restart your computer once** so everything is recognized.
 
-### Step 2 — Download CyberVault
+### Step 2 — Download Kawaii Vault
 
 1. Press the **Start** key, type **PowerShell**, and press Enter to open a
    terminal.
 2. Copy and paste these lines **one at a time**, pressing Enter after each:
 
 ```bash
-git clone https://github.com/ferisooo/CyberVault.git
-cd CyberVault
+git clone https://github.com/ferisooo/Kawaii Vault.git
+cd Kawaii Vault
 ```
 
 ### Step 3 — Install the app's parts
@@ -144,7 +144,7 @@ Paste this and press Enter (this downloads the pieces the app is made of):
 npm install
 ```
 
-### Step 4 — Launch CyberVault! 🎉
+### Step 4 — Launch Kawaii Vault! 🎉
 
 ```bash
 npm run tauri dev
@@ -174,12 +174,12 @@ The finished installer lands in `src-tauri/target/release/`.
 ## 🦠 "How do I know this isn't a virus / spyware?"
 
 Great question — and you're right to be careful. The honest answer:
-**CyberVault is open-source, so you don't have to trust anyone's word — you (or
+**Kawaii Vault is open-source, so you don't have to trust anyone's word — you (or
 a tech-savvy friend) can check for yourself.** Here's exactly where to look.
 
 ### 🌐 What does it send over the internet? (Short answer: almost nothing.)
 
-There is **only one** thing CyberVault does online on its own:
+There is **only one** thing Kawaii Vault does online on its own:
 
 - ✅ **An optional update check.** Roughly once a day it does a simple *read*
   (an HTTP GET) of a small text file at
@@ -243,12 +243,12 @@ never performed; you can confirm `isPro` is hard-set to `true` in
 
 ## 📚 More reading
 
-- [`ABOUT.md`](./ABOUT.md) — the story behind CyberVault.
+- [`ABOUT.md`](./ABOUT.md) — the story behind Kawaii Vault.
 - [`PRIVACY_POLICY.md`](./PRIVACY_POLICY.md) — what gets collected (spoiler: nothing).
 - [`TERMS_OF_SERVICE.md`](./TERMS_OF_SERVICE.md) — terms, and how to fork it.
 - [`LICENSE`](./LICENSE) — the open-source license.
 
-> 🔁 **Want to fork or remix CyberVault?** You're welcome to — just credit
+> 🔁 **Want to fork or remix Kawaii Vault?** You're welcome to — just credit
 > **feris's idea** and **Claude's work**. Details in the
 > [Terms of Service](./TERMS_OF_SERVICE.md).
 
@@ -256,7 +256,7 @@ never performed; you can confirm `isPro` is hard-set to `true` in
 
 <div align="center">
 
-### 💜 CyberVault — **feris's idea & imagination**, built with **Claude**. 💜
+### 💜 Kawaii Vault — **feris's idea & imagination**, built with **Claude**. 💜
 ### 👉 [https://mez.ink/ferisooo](https://mez.ink/ferisooo) 👈
 
 **Every part of this exists thanks to feris. If you love it, go support her.**

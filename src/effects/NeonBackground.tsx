@@ -2,7 +2,7 @@ import { useMemo } from "react";
 
 // Animated neon background: a drifting grid, floating gradient orbs, and large
 // glowing neon words that flicker like a neon sign. Black · pink · yellow.
-const WORDS = ["CYBERVAULT", "SECURE", "ENCRYPTED", "VAULT", "NEON", "PRIVATE", "0xFF2D95"];
+const WORDS = ["KAWAII VAULT", "SECURE", "ENCRYPTED", "VAULT", "NEON", "PRIVATE", "0xFF2D95"];
 
 interface BgWord {
   text: string;

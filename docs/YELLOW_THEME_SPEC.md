@@ -1278,7 +1278,7 @@ High-visibility golden outline with glow, clearly distinguishable against all da
 
 ## Summary
 
-Solar Core transforms CyberVault into a fusion reactor control system — an interface powered by a contained star. Every surface is an armored viewport. Every interaction channels golden energy. Every animation expresses controlled power being released, contained, or transferred.
+Solar Core transforms Kawaii Vault into a fusion reactor control system — an interface powered by a contained star. Every surface is an armored viewport. Every interaction channels golden energy. Every animation expresses controlled power being released, contained, or transferred.
 
 The deep warm-black foundations are the reactor housing. The golden light is the energy within. Panels are inspection windows. Borders are containment fields. Buttons are power switches. Progress bars are energy transfer gauges. The user doesn't browse files — they operate a system that runs on stellar power.
 

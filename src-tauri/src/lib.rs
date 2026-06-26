@@ -661,7 +661,7 @@ async fn get_license_status(app: tauri::AppHandle) -> Result<LicenseStatus, Stri
     with_vm(app, |vm| Ok(vm.get_license_status())).await
 }
 
-// NOTE: CyberVault is fully free — every feature is unlocked for everyone and
+// NOTE: Kawaii Vault is fully free — every feature is unlocked for everyone and
 // there is no paid tier. The license commands below are kept only so the
 // existing frontend keeps compiling, but they deliberately make NO network
 // call. The previous implementation contacted api.gumroad.com on activation

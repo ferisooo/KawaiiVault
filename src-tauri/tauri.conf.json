@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "CyberVault",
+  "productName": "Kawaii Vault",
   "version": "0.1.0",
   "identifier": "com.cybervault.app",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "CyberVault",
+        "title": "Kawaii Vault",
         "width": 1400,
         "height": 900,
         "minWidth": 1000,

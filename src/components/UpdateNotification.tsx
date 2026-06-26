@@ -99,7 +99,7 @@ export default function UpdateNotification({ update, onDismiss, themeMode = "cyb
           {/* Body */}
           <div className="px-4 pb-1">
             <p className="font-mono text-[17px] text-[var(--color-cyber-muted)] leading-relaxed">
-              CyberVault{" "}
+              Kawaii Vault{" "}
               <span className={`${accentColor} font-semibold`}>v{update.version}</span>{" "}
               is now available.
             </p>

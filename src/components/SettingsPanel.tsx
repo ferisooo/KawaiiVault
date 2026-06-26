@@ -457,28 +457,28 @@ const TOS_CONTENT = () => (
 
     <div>
       <h3 className="text-[var(--color-neon-bright)] uppercase tracking-wider mb-2 font-bold">Why I Built This</h3>
-      <p>I built CyberVault because I noticed that genuinely privacy-focused apps are either overpriced, overcomplicated, or just not available for everyday people. I wanted to create something that puts your privacy first without emptying your wallet. Your data is yours — period.</p>
+      <p>I built Kawaii Vault because I noticed that genuinely privacy-focused apps are either overpriced, overcomplicated, or just not available for everyday people. I wanted to create something that puts your privacy first without emptying your wallet. Your data is yours — period.</p>
     </div>
 
     <div>
       <h3 className="text-[var(--color-neon-bright)] uppercase tracking-wider mb-2 font-bold">What You're Agreeing To</h3>
-      <p>By using CyberVault, you agree to these terms. If you don't agree, please don't use the app — no hard feelings.</p>
+      <p>By using Kawaii Vault, you agree to these terms. If you don't agree, please don't use the app — no hard feelings.</p>
     </div>
 
     <div>
       <h3 className="text-[var(--color-neon-bright)] uppercase tracking-wider mb-2 font-bold">Liability Disclaimer</h3>
-      <p>CyberVault is provided "as is" with no warranties of any kind — express or implied. I'm an independent developer, not a security firm. I do my best to make this app secure, but I can't guarantee it'll be perfect in every scenario.</p>
+      <p>Kawaii Vault is provided "as is" with no warranties of any kind — express or implied. I'm an independent developer, not a security firm. I do my best to make this app secure, but I can't guarantee it'll be perfect in every scenario.</p>
       <p className="mt-2">I am <span className="text-amber-400">not responsible</span> for any data loss, corruption, unauthorized access, or damages that may result from using this app. You use it at your own risk.</p>
     </div>
 
     <div>
       <h3 className="text-[var(--color-neon-bright)] uppercase tracking-wider mb-2 font-bold">How You Use It Is On You</h3>
-      <p>I built this for legitimate privacy protection. I'm not responsible for how anyone chooses to use CyberVault. Don't use it for anything illegal — that's on you, not me.</p>
+      <p>I built this for legitimate privacy protection. I'm not responsible for how anyone chooses to use Kawaii Vault. Don't use it for anything illegal — that's on you, not me.</p>
     </div>
 
     <div>
       <h3 className="text-[var(--color-neon-bright)] uppercase tracking-wider mb-2 font-bold">No Vault Is 100% Foolproof</h3>
-      <p>Let me be upfront: <span className="text-amber-400">no vault is 100% foolproof.</span> CyberVault is designed to protect against casual and intermediate unauthorized access — someone snooping on your computer, a nosy roommate, or a thief who stole your device.</p>
+      <p>Let me be upfront: <span className="text-amber-400">no vault is 100% foolproof.</span> Kawaii Vault is designed to protect against casual and intermediate unauthorized access — someone snooping on your computer, a nosy roommate, or a thief who stole your device.</p>
       <p className="mt-2">It is <span className="text-red-400">not intended to, and cannot, guarantee protection</span> against official investigations or government-level forensic analysis. If a state-level actor with unlimited resources wants in, no consumer software can promise absolute protection. I'm being honest about that.</p>
     </div>
 
@@ -507,18 +507,18 @@ const PRIVACY_CONTENT = () => (
 
     <div>
       <h3 className="text-[var(--color-neon-bright)] uppercase tracking-wider mb-2 font-bold">The Short Version</h3>
-      <p>I don't collect your data. I don't want your data. CyberVault was built specifically so that your files stay on <span className="text-[var(--color-neon-primary)]">your device</span> and nowhere else.</p>
+      <p>I don't collect your data. I don't want your data. Kawaii Vault was built specifically so that your files stay on <span className="text-[var(--color-neon-primary)]">your device</span> and nowhere else.</p>
     </div>
 
     <div>
       <h3 className="text-[var(--color-neon-bright)] uppercase tracking-wider mb-2 font-bold">No Data Collection</h3>
-      <p>CyberVault does <span className="text-emerald-400">not</span> collect any personal information. No names, no emails, no usage analytics, no telemetry, no crash reports, no device fingerprints — nothing. I literally have no idea who you are or how you use the app, and that's by design.</p>
+      <p>Kawaii Vault does <span className="text-emerald-400">not</span> collect any personal information. No names, no emails, no usage analytics, no telemetry, no crash reports, no device fingerprints — nothing. I literally have no idea who you are or how you use the app, and that's by design.</p>
     </div>
 
     <div>
       <h3 className="text-[var(--color-neon-bright)] uppercase tracking-wider mb-2 font-bold">No Data Transmission</h3>
-      <p>Your files, passwords, notes, documents — none of it ever leaves your device. CyberVault does <span className="text-emerald-400">not</span> send any sensitive data to any server, cloud service, or third party. Everything is encrypted and stored locally on your machine.</p>
-      <p className="mt-2">The only network request CyberVault makes is license key verification with Gumroad (if you're a Pro subscriber). That request contains only your license key — no vault data, no file names, no personal information.</p>
+      <p>Your files, passwords, notes, documents — none of it ever leaves your device. Kawaii Vault does <span className="text-emerald-400">not</span> send any sensitive data to any server, cloud service, or third party. Everything is encrypted and stored locally on your machine.</p>
+      <p className="mt-2">The only network request Kawaii Vault makes is license key verification with Gumroad (if you're a Pro subscriber). That request contains only your license key — no vault data, no file names, no personal information.</p>
     </div>
 
     <div>
@@ -528,7 +528,7 @@ const PRIVACY_CONTENT = () => (
 
     <div>
       <h3 className="text-[var(--color-neon-bright)] uppercase tracking-wider mb-2 font-bold">No Accounts Required</h3>
-      <p>You don't need to create an account, provide an email, or sign up for anything to use CyberVault. The app works entirely offline (except for optional Pro license verification).</p>
+      <p>You don't need to create an account, provide an email, or sign up for anything to use Kawaii Vault. The app works entirely offline (except for optional Pro license verification).</p>
     </div>
 
     <div>
@@ -538,7 +538,7 @@ const PRIVACY_CONTENT = () => (
 
     <div>
       <h3 className="text-[var(--color-neon-bright)] uppercase tracking-wider mb-2 font-bold">Third Parties</h3>
-      <p>CyberVault does not integrate with any third-party analytics, advertising, or tracking services. The only external service is Gumroad for Pro license verification, and that interaction is minimal and contains no sensitive data.</p>
+      <p>Kawaii Vault does not integrate with any third-party analytics, advertising, or tracking services. The only external service is Gumroad for Pro license verification, and that interaction is minimal and contains no sensitive data.</p>
     </div>
 
     <div>
@@ -605,7 +605,7 @@ const FAQ_CONTENT = () => (
   <>
     <div>
       <h3 className="text-[var(--color-neon-bright)] uppercase tracking-wider mb-2 font-bold">How are my files protected?</h3>
-      <p>When you import a file, CyberVault creates a unique random key just for that file, encrypts it, and then locks that key with your vault's master key (which comes from your password). Everything is encrypted on your device — nothing is sent anywhere.</p>
+      <p>When you import a file, Kawaii Vault creates a unique random key just for that file, encrypts it, and then locks that key with your vault's master key (which comes from your password). Everything is encrypted on your device — nothing is sent anywhere.</p>
     </div>
 
     <div>
@@ -645,7 +645,7 @@ const FAQ_CONTENT = () => (
 
     <div>
       <h3 className="text-[var(--color-neon-bright)] uppercase tracking-wider mb-2 font-bold">Is my data stored in the cloud?</h3>
-      <p><span className="text-emerald-400">No.</span> Everything stays on your device. CyberVault never uploads anything anywhere. The only network request is optional Pro license verification with Gumroad.</p>
+      <p><span className="text-emerald-400">No.</span> Everything stays on your device. Kawaii Vault never uploads anything anywhere. The only network request is optional Pro license verification with Gumroad.</p>
     </div>
   </>
 );
@@ -745,7 +745,7 @@ function HelpInfoTab({ vaultSizeInfo, isPro, licenseKey, licenseEmail, licenseLo
 
       {/* Version */}
       <div className="text-center font-mono text-[17px] text-[var(--color-cyber-muted)]/50 pt-2">
-        CyberVault v1.0.0 · AES-256-GCM · Argon2id KDF
+        Kawaii Vault v1.0.0 · AES-256-GCM · Argon2id KDF
       </div>
 
       {/* Popups */}
@@ -1162,7 +1162,7 @@ function ToolsSections({ isPro, themeMode, autoLockTimeout, onAutoLockChange, du
       <CollapsibleSection id="watchfolder" icon={<FolderOpen size={13} className="text-[var(--color-neon-primary)]" />} label="Watch Folder (Auto-Import)" open={openSections.has("watchfolder")} onToggle={toggle}>
         <div className="p-3 rounded-sm bg-[var(--color-cyber-black)]/30 border border-[var(--color-cyber-border)]/30 space-y-3">
           <p className="font-mono text-[17px] text-[var(--color-cyber-muted)]">
-            Pick a folder and CyberVault will automatically import any photos, videos, and audio you put there — encrypting them into the vault within a few seconds. The original files are left untouched.
+            Pick a folder and Kawaii Vault will automatically import any photos, videos, and audio you put there — encrypting them into the vault within a few seconds. The original files are left untouched.
           </p>
           <div>
             <label className="font-mono text-[17px] text-[var(--color-cyber-muted)] uppercase tracking-widest mb-1 block">Current Watch Folder</label>

@@ -722,6 +722,6 @@ The rainbow theme maps to theme mode `"prismatic"` in the existing `useThemeMode
 
 ## Summary
 
-The Prismatic theme transforms CyberVault into a system that feels like it's built from refracted light. Every surface is a translucent lens. Every interaction bends the spectrum. The deep void background makes colors appear self-luminous. Motion is fluid and radiant — light flowing through glass, not electricity through circuits.
+The Prismatic theme transforms Kawaii Vault into a system that feels like it's built from refracted light. Every surface is a translucent lens. Every interaction bends the spectrum. The deep void background makes colors appear self-luminous. Motion is fluid and radiant — light flowing through glass, not electricity through circuits.
 
 The result: a prismatic operating system made of shifting light, holographic energy, and flowing color spectra.

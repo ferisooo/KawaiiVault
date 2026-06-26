@@ -2323,7 +2323,7 @@ function DocumentsView({ category, pageColor, onUpdate, themeMode, isPro = false
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     const token = Array.from({ length: 16 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    setShareModal({ doc, link: `cybervault://share/${doc.id}?token=${token}&exp=${expires.getTime()}`, expires: expires.toLocaleString() });
+    setShareModal({ doc, link: `kawaiivault://share/${doc.id}?token=${token}&exp=${expires.getTime()}`, expires: expires.toLocaleString() });
   };
 
   const toggleSelect = (id: string) => {
