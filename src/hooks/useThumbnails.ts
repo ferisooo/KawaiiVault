@@ -83,6 +83,13 @@ export function useThumbnails(config: ThumbnailCacheConfig = {}) {
     if (Object.keys(batch).length === 0) return;
     batchedUpdatesRef.current = {};
     setThumbnails((prev) => {
+      // Revoke any blob URL this batch REPLACES (e.g. a video's placeholder
+      // swapped for its captured frame). These were previously orphaned —
+      // each one kept its backing Blob alive for the whole session.
+      for (const [id, url] of Object.entries(batch)) {
+        const old = prev[id];
+        if (old && old !== url && old.startsWith("blob:")) URL.revokeObjectURL(old);
+      }
       const next = { ...prev, ...batch };
       if (!cacheAllRef.current && lruOrderRef.current.length > maxThumbnailsRef.current) {
         const excess = lruOrderRef.current.length - maxThumbnailsRef.current;
@@ -332,6 +339,11 @@ export function useThumbnails(config: ThumbnailCacheConfig = {}) {
         cancelAnimationFrame(batchFlushTimerRef.current);
         batchFlushTimerRef.current = null;
       }
+      // Un-flushed batch entries hold blob URLs too — revoke them or they leak.
+      for (const url of Object.values(batchedUpdatesRef.current)) {
+        if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+      }
+      batchedUpdatesRef.current = {};
       for (const url of Object.values(thumbnailsRef.current)) {
         if (url.startsWith("blob:")) URL.revokeObjectURL(url);
       }

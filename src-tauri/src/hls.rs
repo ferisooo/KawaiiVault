@@ -199,6 +199,56 @@ fn decrypt_segment(ct: &[u8], key: &[u8; 16], iv: &[u8; 16]) -> Result<Vec<u8>, 
     Ok(strip_pkcs7(buf))
 }
 
+/// SSRF guard for the app-privileged downloaders (media grab + HLS): reject
+/// URLs whose host is (or resolves to) a loopback, link-local, or unspecified
+/// address. A malicious page could otherwise present "media" URLs pointing at
+/// http://127.0.0.1:PORT/... and use the app as a proxy into local services.
+/// Private LAN ranges (RFC1918) stay allowed — grabbing from a local NAS or
+/// media server is a legitimate use.
+pub(crate) fn reject_internal_host(url: &str) -> Result<(), String> {
+    let parsed = Url::parse(url).map_err(|e| format!("Bad URL: {}", e))?;
+    if !matches!(parsed.scheme(), "http" | "https") {
+        return Err("Only http(s) URLs are allowed".into());
+    }
+    let host = parsed.host_str().ok_or("URL has no host")?;
+    let host_trim = host.trim_start_matches('[').trim_end_matches(']');
+
+    let blocked = |ip: &std::net::IpAddr| -> bool {
+        match ip {
+            std::net::IpAddr::V4(v4) => {
+                v4.is_loopback() || v4.is_link_local() || v4.is_unspecified() || v4.is_broadcast()
+            }
+            std::net::IpAddr::V6(v6) => {
+                v6.is_loopback() || v6.is_unspecified() || (v6.segments()[0] & 0xffc0) == 0xfe80
+            }
+        }
+    };
+
+    if let Ok(ip) = host_trim.parse::<std::net::IpAddr>() {
+        if blocked(&ip) {
+            return Err("URL targets a local/loopback address".into());
+        }
+        return Ok(());
+    }
+
+    let lower = host_trim.to_ascii_lowercase();
+    if lower == "localhost" || lower.ends_with(".localhost") || lower.ends_with(".local") {
+        return Err("URL targets a local hostname".into());
+    }
+    // Resolve the name and reject if ANY address is internal (covers DNS
+    // tricks where a public-looking name points at 127.0.0.1).
+    use std::net::ToSocketAddrs;
+    let port = parsed.port_or_known_default().unwrap_or(443);
+    if let Ok(addrs) = (host_trim, port).to_socket_addrs() {
+        for addr in addrs {
+            if blocked(&addr.ip()) {
+                return Err("URL resolves to a local/loopback address".into());
+            }
+        }
+    }
+    Ok(())
+}
+
 fn build_request(client: &reqwest::Client, url: &str, referer: Option<&str>) -> reqwest::RequestBuilder {
     let mut req = client
         .get(url)
@@ -213,6 +263,7 @@ fn build_request(client: &reqwest::Client, url: &str, referer: Option<&str>) -> 
 }
 
 async fn fetch_text(client: &reqwest::Client, url: &str, referer: Option<&str>) -> Result<String, String> {
+    reject_internal_host(url)?;
     let resp = build_request(client, url, referer)
         .send()
         .await
@@ -224,6 +275,7 @@ async fn fetch_text(client: &reqwest::Client, url: &str, referer: Option<&str>) 
 }
 
 async fn fetch_bytes(client: &reqwest::Client, url: &str, referer: Option<&str>) -> Result<Vec<u8>, String> {
+    reject_internal_host(url)?;
     let resp = build_request(client, url, referer)
         .send()
         .await

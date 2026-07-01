@@ -116,6 +116,9 @@ export function useTauri() {
     // File content decryption
     getFileContent: (fileId: string) => call<[string, string]>("get_file_content", { fileId }),
 
+    // Vault-derived key (hex) for encrypting the IndexedDB thumbnail cache
+    getCacheKey: () => call<string>("get_cache_key"),
+
     // Streaming URL for video/audio (bypasses base64 encoding)
     getStreamUrl: (fileId: string) => convertFileSrc("file/" + fileId, "cvlt"),
 

@@ -48,7 +48,11 @@ pub struct FileStreamInfo {
     pub total_size: u64,
     pub mime_type: String,
     pub file_id: String,
-    pub encryption_key: Option<Vec<u8>>,
+    /// Per-file decryption key. Wrapped in `Zeroizing` so the copy handed to
+    /// the streaming/thumbnail/phone consumers is wiped from RAM when the
+    /// stream info is dropped, instead of lingering until the allocator
+    /// happens to reuse the memory.
+    pub encryption_key: Option<Zeroizing<Vec<u8>>>,
     pub encryption_salt: Option<Vec<u8>>,
     /// Whether this file's chunks were sealed with chunk-index AAD binding
     /// (see SecurityConfig::aead_bound). The streaming/decrypt path must use
@@ -412,14 +416,16 @@ fn argon2_hasher() -> Argon2<'static> {
 }
 
 /// Hash a PIN (optionally combined with key file data) using Argon2id.
+/// The intermediate PIN buffer is wrapped in `Zeroizing` so the raw PIN bytes
+/// are wiped from the heap as soon as hashing completes.
 fn hash_pin(pin: &str, key_file_data: Option<&[u8]>) -> Result<String, String> {
-    let mut input = pin.as_bytes().to_vec();
+    let mut input = Zeroizing::new(pin.as_bytes().to_vec());
     if let Some(kf) = key_file_data {
         // Combine PIN + key file via HMAC-like concatenation
         let mut hasher = Sha256::new();
-        hasher.update(&input);
+        hasher.update(input.as_slice());
         hasher.update(kf);
-        input = hasher.finalize().to_vec();
+        input = Zeroizing::new(hasher.finalize().to_vec());
     }
 
     let salt = SaltString::generate(&mut OsRng);
@@ -450,12 +456,12 @@ fn is_legacy_sha256_hash(s: &str) -> bool {
 /// The fallback is tightly scoped (only a canonical 64-hex digest can reach it)
 /// and compared in constant time.
 fn verify_pin(pin: &str, key_file_data: Option<&[u8]>, stored_hash: &str) -> bool {
-    let mut input = pin.as_bytes().to_vec();
+    let mut input = Zeroizing::new(pin.as_bytes().to_vec());
     if let Some(kf) = key_file_data {
         let mut hasher = Sha256::new();
-        hasher.update(&input);
+        hasher.update(input.as_slice());
         hasher.update(kf);
-        input = hasher.finalize().to_vec();
+        input = Zeroizing::new(hasher.finalize().to_vec());
     }
 
     let parsed = match PasswordHash::new(stored_hash) {
@@ -664,12 +670,12 @@ fn file_bundle_size(vault: &VaultData, file: &VaultFile) -> u64 {
 
 /// Derive a 32-byte encryption key from PIN + optional key file + salt using Argon2id.
 fn derive_encryption_key(pin: &str, key_file_data: Option<&[u8]>, salt: &[u8]) -> Result<Zeroizing<Vec<u8>>, String> {
-    let mut input = pin.as_bytes().to_vec();
+    let mut input = Zeroizing::new(pin.as_bytes().to_vec());
     if let Some(kf) = key_file_data {
         let mut hasher = Sha256::new();
-        hasher.update(&input);
+        hasher.update(input.as_slice());
         hasher.update(kf);
-        input = hasher.finalize().to_vec();
+        input = Zeroizing::new(hasher.finalize().to_vec());
     }
     let mut key = Zeroizing::new(vec![0u8; 32]);
     argon2_hasher()
@@ -971,6 +977,49 @@ fn sniff_extension(data: &[u8]) -> Option<&'static str> {
         return Some("ts");
     }
     None
+}
+
+/// Best-effort anti-forensic file removal: overwrite the file's contents with
+/// a single pass of random bytes (synced to disk) before unlinking it. Used
+/// for every plaintext temp file the app creates (browser downloads, HLS
+/// stitches, ghost temp cleanup) so deleted plaintext doesn't linger in
+/// unallocated disk blocks. Single-pass random is the accepted standard for
+/// modern drives; on SSDs wear-leveling means no in-place overwrite is
+/// guaranteed, so this is defense-in-depth, not a certified erase.
+pub fn shred_file_best_effort(path: &Path) {
+    if let Ok(meta) = fs::symlink_metadata(path) {
+        if meta.is_file() && meta.len() > 0 {
+            if let Ok(mut f) = fs::OpenOptions::new().write(true).open(path) {
+                let mut buf = vec![0u8; 64 * 1024];
+                let mut remaining = meta.len();
+                while remaining > 0 {
+                    let n = (buf.len() as u64).min(remaining) as usize;
+                    OsRng.fill_bytes(&mut buf[..n]);
+                    if f.write_all(&buf[..n]).is_err() {
+                        break;
+                    }
+                    remaining -= n as u64;
+                }
+                let _ = f.sync_all();
+            }
+        }
+    }
+    let _ = fs::remove_file(path);
+}
+
+/// Recursively shred every file inside a directory, then remove the tree.
+pub fn shred_dir_best_effort(dir: &Path) {
+    if let Ok(entries) = fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                shred_dir_best_effort(&path);
+            } else {
+                shred_file_best_effort(&path);
+            }
+        }
+    }
+    let _ = fs::remove_dir_all(dir);
 }
 
 fn dirs_or_default() -> PathBuf {
@@ -1639,6 +1688,40 @@ fn bundle_rebuild_without_progress(
         }
 
         write_bundle_footer(&mut tmp, new_vault)?;
+        // The rebuilt bundle must be durable BEFORE we destroy anything in the
+        // old one — a crash after this point can then only affect blobs that
+        // were being deleted anyway, never the kept files.
+        tmp.sync_all().map_err(|e| format!("Sync rebuilt bundle: {}", e))?;
+    }
+
+    // Anti-forensic pass: overwrite the removed blobs' byte ranges in the OLD
+    // bundle with random data before the rename unlinks it. rename() only
+    // orphans the old inode's blocks — without this, the deleted ciphertext
+    // (still decryptable with the vault-wide key on vaults without per-file
+    // DEKs) would linger in unallocated disk space until the filesystem
+    // happened to reuse it. Best-effort: an error here never fails the
+    // rebuild, since the new bundle is already complete and synced.
+    {
+        if let Ok(mut orig) = fs::OpenOptions::new().write(true).open(path) {
+            let mut buf = vec![0u8; 64 * 1024];
+            let mut offset = 0u64;
+            for f in old_files {
+                let f_bundle_size = file_bundle_size(new_vault, f);
+                if removed_ids.contains(&f.id) && orig.seek(SeekFrom::Start(offset)).is_ok() {
+                    let mut remaining = f_bundle_size;
+                    while remaining > 0 {
+                        let n = (buf.len() as u64).min(remaining) as usize;
+                        OsRng.fill_bytes(&mut buf[..n]);
+                        if orig.write_all(&buf[..n]).is_err() {
+                            break;
+                        }
+                        remaining -= n as u64;
+                    }
+                }
+                offset += f_bundle_size;
+            }
+            let _ = orig.sync_all();
+        }
     }
 
     fs::rename(&tmp_path, path).map_err(|e| {
@@ -1909,15 +1992,17 @@ impl VaultManager {
         }
         // Also clean up the temp/ directory — including per-download
         // subdirectories left by browser downloads interrupted by a crash.
+        // These can hold PLAINTEXT media, so they are shredded, not just
+        // unlinked.
         let temp_dir = self.vaults_dir.join("temp");
         if temp_dir.exists() {
             if let Ok(entries) = fs::read_dir(&temp_dir) {
                 for entry in entries.flatten() {
                     let path = entry.path();
                     if path.is_file() {
-                        let _ = fs::remove_file(&path);
+                        shred_file_best_effort(&path);
                     } else if path.is_dir() {
-                        let _ = fs::remove_dir_all(&path);
+                        shred_dir_best_effort(&path);
                     }
                 }
             }
@@ -2069,6 +2154,22 @@ impl VaultManager {
     /// Get the encryption key bytes for a vault (revealed from protected memory).
     fn get_enc_key(&self, vault_id: &str) -> Option<Zeroizing<Vec<u8>>> {
         self.encryption_keys.get(vault_id).map(|pm| pm.reveal())
+    }
+
+    /// Derive a stable per-vault key for encrypting UI-side caches (the
+    /// thumbnail IndexedDB store). This is SHA-256(KEK || label) — a one-way
+    /// derivation, never the KEK itself — and is only available while the
+    /// vault is unlocked, so cached thumbnails at rest are unreadable without
+    /// unlocking the vault first.
+    pub fn get_cache_key(&self) -> Result<String, String> {
+        let vid = self.active_vault_id.as_ref().ok_or("No vault unlocked")?;
+        let kek = self
+            .get_enc_key(vid)
+            .ok_or("Encryption key not available")?;
+        let mut hasher = Sha256::new();
+        hasher.update(kek.as_slice());
+        hasher.update(b"kawaii-thumb-cache-v1");
+        Ok(hex::encode(hasher.finalize()))
     }
 
     /// Re-save the active vault's metadata footer. Public so commands that run
@@ -2865,7 +2966,8 @@ impl VaultManager {
         }))
     }
 
-    /// Clean up any temp files
+    /// Clean up any temp files. Contents may be plaintext (interrupted browser
+    /// downloads / exports), so files are shredded rather than just unlinked.
     pub fn secure_cleanup_temp(&self) -> Result<u32, String> {
         let _vid = self.active_vault_id.as_ref().ok_or("No vault unlocked")?;
         let temp_dir = self.vaults_dir.join("temp");
@@ -2875,7 +2977,10 @@ impl VaultManager {
                 for entry in entries.flatten() {
                     let path = entry.path();
                     if path.is_file() {
-                        fs::remove_file(&path).ok();
+                        shred_file_best_effort(&path);
+                        count += 1;
+                    } else if path.is_dir() {
+                        shred_dir_best_effort(&path);
                         count += 1;
                     }
                 }
@@ -3734,12 +3839,15 @@ impl VaultManager {
         // If file has a wrapped DEK, resolve the actual file key here
         // so the streaming handler doesn't need to know about key wrapping.
         let (enc_key, enc_salt) = if let Some(ref salt_hex) = vault.security.encryption_salt {
+            // Keep both the revealed KEK and the resolved file key inside
+            // Zeroizing wrappers end-to-end — no plain Vec<u8> copies of key
+            // material are ever created on this path.
             let kek = self.encryption_keys.get(vid)
-                .map(|pm| pm.reveal().to_vec())
+                .map(|pm| pm.reveal())
                 .ok_or("Encryption key not available")?;
             let file_key = resolve_file_key(&kek, target_wrapped_dek.as_deref(), &target_file_id, vault.security.aead_bound)?;
             let salt = hex::decode(salt_hex).map_err(|e| format!("Invalid salt: {}", e))?;
-            (Some(file_key.to_vec()), Some(salt))
+            (Some(file_key), Some(salt))
         } else {
             (None, None)
         };

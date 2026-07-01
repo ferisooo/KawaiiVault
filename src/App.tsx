@@ -11,6 +11,7 @@ import { useVaultReliability } from "./hooks/useVaultReliability";
 import { useLicense } from "./hooks/useLicense";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { initSessionKey, clearSessionKey, encryptPasswords } from "./utils/sessionCrypto";
+import { initThumbCacheKey, clearThumbCacheKey } from "./utils/thumbnailDB";
 
 // Cyberpunk effects
 import Particles from "./effects/Particles";
@@ -472,6 +473,7 @@ export default function App() {
           tauri.clearClipboard().catch(() => {}); // wipe any copied secret on auto-lock
           sessionCache.clearAll();
           clearSessionKey();
+          clearThumbCacheKey();
           store.lockVault();
           store.notify("Vault auto-locked due to inactivity", "warning");
           return;
@@ -497,6 +499,7 @@ export default function App() {
           tauri.clearClipboard().catch(() => {});
           sessionCache.clearAll();
           clearSessionKey();
+          clearThumbCacheKey();
           thumbs.clearThumbnails(true);
           setFiles([]);
           setShowBrowser(false); // backend already closed the browser window
@@ -836,6 +839,7 @@ export default function App() {
     setThumbnailsReady(false);
     importDoneRef.current = false;
     clearSessionKey(); // Destroy session encryption key — encrypted fields become unreadable
+    clearThumbCacheKey(); // Thumbnail cache becomes undecryptable until next unlock
     setShowBrowser(false); // backend lock_vault closes the browser window
     store.lockVault();
     // Reset stealth bypass so the snake game re-appears on next login
@@ -1358,14 +1362,17 @@ export default function App() {
     backgroundOffsetY: number;
   } | null>(null);
 
-  // Handle selecting a vault file as custom background
+  // Handle selecting a vault file as custom background.
+  // Streams via the cvlt:// protocol (like the slideshow) instead of pulling
+  // the ENTIRE file through IPC as a base64 data: URL — the old path held a
+  // full base64 copy of the file in memory, a multi-hundred-MB spike (and
+  // often a UI freeze) when a large video was chosen as the background.
   const handleVaultFileBackground = useCallback(async (fileId: string) => {
     try {
-      const [b64Data, mimeType] = await tauri.getFileContent(fileId);
-      const isVideo = mimeType.startsWith("video/");
-      const dataUrl = `data:${mimeType};base64,${b64Data}`;
+      const fileEntry = filesRef.current.find((f) => f.id === fileId);
+      const isVideo = fileEntry?.category === "Videos";
       store.update({
-        customBackground: dataUrl,
+        customBackground: convertFileSrc("file/" + fileId, "cvlt"),
         backgroundIsVideo: isVideo,
         backgroundSource: "vault",
         backgroundVaultFileId: fileId,
@@ -1373,7 +1380,7 @@ export default function App() {
     } catch {
       store.notify("Failed to load vault file as background", "error");
     }
-  }, [tauri, store]);
+  }, [store]);
 
   // Slideshow: cycle through vault images/videos at the configured interval.
   // Uses two alternating layers with CSS crossfade — no black frames.
@@ -1448,6 +1455,15 @@ export default function App() {
 
     // Generate a fresh session encryption key for this unlock session
     await initSessionKey();
+
+    // Install the vault-derived thumbnail-cache key so IndexedDB thumbnails
+    // are encrypted at rest. Legacy unencrypted vaults have no key — their
+    // thumbnails are simply not persisted (never stored as plaintext).
+    try {
+      await initThumbCacheKey(await tauri.getCacheKey());
+    } catch {
+      clearThumbCacheKey();
+    }
 
     // Load encrypted pages from backend (passwords, notes, documents)
     let pagesRestored = false;

@@ -635,6 +635,13 @@ async fn export_encrypted_zip(app: tauri::AppHandle, file_ids: Vec<String>, dest
 }
 
 #[tauri::command]
+async fn get_cache_key(app: tauri::AppHandle) -> Result<String, String> {
+    // KEK-derived key (one-way) for encrypting the UI's IndexedDB thumbnail
+    // cache. Only available while a vault is unlocked.
+    with_vm(app, |vm| vm.get_cache_key()).await
+}
+
+#[tauri::command]
 async fn save_pages(app: tauri::AppHandle, pages_json: String) -> Result<(), String> {
     with_vm(app, move |vm| vm.save_pages(pages_json)).await
 }
@@ -1279,8 +1286,10 @@ fn import_browser_download(app: tauri::AppHandle, path: std::path::PathBuf) {
         Ok(added.iter().map(|f| f.id.clone()).collect())
     })();
 
-    // Never leave plaintext behind, success or not.
-    let _ = std::fs::remove_file(&path);
+    // Never leave plaintext behind, success or not. Shred (overwrite + unlink)
+    // rather than just unlink, so the plaintext doesn't linger in unallocated
+    // disk blocks after the vault has encrypted its own copy.
+    vault::shred_file_best_effort(&path);
     if let Some(parent) = path.parent() {
         let _ = std::fs::remove_dir(parent); // per-download subdir, empty now
     }
@@ -1395,7 +1404,7 @@ async fn browser_open(app: tauri::AppHandle, url: String) -> Result<(), String> 
                         // The download failed (common when a site streams video in
                         // pieces rather than serving a single file). Clean up and —
                         // crucially — tell the user instead of failing silently.
-                        let _ = std::fs::remove_file(&p);
+                        vault::shred_file_best_effort(&p);
                         if let Some(parent) = p.parent() {
                             let _ = std::fs::remove_dir(parent);
                         }
@@ -1484,6 +1493,9 @@ fn grab_filename(url: &tauri::Url, kind: &str) -> String {
 #[tauri::command]
 async fn browser_grab(app: tauri::AppHandle, url: String, referer: Option<String>) -> Result<(), String> {
     let parsed = parse_browser_url(&url)?;
+    // SSRF guard: this fetch runs with app privileges, so a page must not be
+    // able to point it at loopback/link-local services.
+    hls::reject_internal_host(parsed.as_str())?;
 
     // Resolve temp destination (requires an unlocked vault).
     let (dest, kind_is_audio) = {
@@ -1524,7 +1536,8 @@ async fn browser_grab(app: tauri::AppHandle, url: String, referer: Option<String
     }
 
     let cleanup = |dest: &std::path::Path| {
-        let _ = std::fs::remove_file(dest);
+        // Partial downloads are plaintext — shred, don't just unlink.
+        vault::shred_file_best_effort(dest);
         if let Some(parent) = dest.parent() { let _ = std::fs::remove_dir(parent); }
     };
 
@@ -1606,7 +1619,8 @@ async fn browser_grab_stream(app: tauri::AppHandle, url: String, referer: Option
     };
 
     let cleanup = |dest: &std::path::Path| {
-        let _ = std::fs::remove_file(dest);
+        // Partial stream stitches are plaintext — shred, don't just unlink.
+        vault::shred_file_best_effort(dest);
         if let Some(parent) = dest.parent() { let _ = std::fs::remove_dir(parent); }
     };
 
@@ -1901,6 +1915,7 @@ pub fn run() {
             browser_grab,
             browser_grab_stream,
             export_encrypted_zip,
+            get_cache_key,
             save_pages,
             load_pages,
             save_bookmarks,
@@ -1910,6 +1925,22 @@ pub fn run() {
             revalidate_license,
             deactivate_license,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            // Wipe key material on shutdown. The OS event loop terminates the
+            // process without dropping Tauri's managed state, so without this
+            // handler the in-memory KEK would never be explicitly zeroized on
+            // app exit — it would just sit in freed RAM until overwritten.
+            // lock_vault() re-encrypts session metadata, unlocks the mlock'd
+            // pages, and zeroizes both the PIN-hash and encryption-key buffers.
+            if let tauri::RunEvent::Exit = event {
+                stop_phone_server(app_handle);
+                if let Ok(mut vm) = app_handle.state::<AppState>().vault_manager.lock() {
+                    if vm.is_unlocked() {
+                        vm.lock_vault();
+                    }
+                }
+            }
+        });
 }
