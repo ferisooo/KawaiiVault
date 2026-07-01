@@ -1044,50 +1044,6 @@ fn dirs_or_default() -> PathBuf {
     PathBuf::from(".drvstore")
 }
 
-/// Public accessor for the app's data directory (where vault bundles and the
-/// remote-wipe trigger config live). The remote-wipe poller needs this before
-/// any vault is unlocked, so it can't go through a VaultManager instance.
-pub fn app_data_dir() -> PathBuf {
-    dirs_or_default()
-}
-
-/// Best-effort free-space scrub: repeatedly write a large file of random bytes
-/// on the same volume as `dir` until the disk is full (write error), then
-/// delete it. This overwrites the unallocated blocks where previously-deleted
-/// plaintext/ciphertext fragments may still physically live.
-///
-/// Honest limits: on SSDs (wear-leveling / over-provisioning / TRIM) and on
-/// copy-on-write filesystems, filling the *logical* free space does NOT
-/// guarantee every physical block that once held data gets overwritten. This
-/// is defense-in-depth for the panic-wipe path, not a certified erase.
-pub fn scrub_free_space(dir: &Path) {
-    let scrub_path = dir.join(".scrub.tmp");
-    if let Ok(mut file) = fs::File::create(&scrub_path) {
-        let mut buf = vec![0u8; 4 * 1024 * 1024]; // 4 MiB write chunks
-        // Cap total work so a huge disk can't run effectively forever before
-        // the machine restarts; 64 GiB of random overwrite is already far past
-        // the point of diminishing returns for this best-effort pass.
-        let max_bytes: u64 = 64 * 1024 * 1024 * 1024;
-        let mut written: u64 = 0;
-        loop {
-            OsRng.fill_bytes(&mut buf);
-            match file.write_all(&buf) {
-                Ok(()) => {
-                    written += buf.len() as u64;
-                    if written >= max_bytes {
-                        break;
-                    }
-                }
-                // Disk full (or any write error) — we've done what we can.
-                Err(_) => break,
-            }
-        }
-        let _ = file.sync_all();
-        drop(file);
-    }
-    let _ = fs::remove_file(&scrub_path);
-}
-
 /// Apply OS-level hardening to the vault storage directory:
 /// Hidden + System attributes, and deny-delete ACL for all non-SYSTEM accounts.
 fn harden_vault_dir(path: &Path) {
@@ -2573,55 +2529,6 @@ impl VaultManager {
             }
             fs::remove_file(&bundle_path).ok();
         }
-    }
-
-    /// Panic-wipe: securely destroy EVERY vault on this machine, then remove
-    /// all remaining app data files (thumbnail caches, license, temp, and the
-    /// remote-wipe config itself). Used by the remote-wipe trigger. Returns the
-    /// number of vault bundles destroyed.
-    ///
-    /// This zeroizes in-memory keys, overwrites each bundle with random bytes
-    /// before unlinking, and shreds stray plaintext temp files. Free-space
-    /// scrubbing (if requested by the action) is done separately by the caller
-    /// AFTER this returns, so the freed blocks are included in the scrub.
-    pub fn remote_wipe_all_vaults(&mut self) -> u32 {
-        self.active_vault_id = None;
-        self.last_activity = None;
-
-        let vault_ids: Vec<String> = self.vault_bundles.keys().cloned().collect();
-        let mut destroyed = 0u32;
-        for vid in &vault_ids {
-            self.destroy_vault_on_disk(vid);
-            destroyed += 1;
-        }
-
-        // Zeroize any remaining key material for vaults not in vault_bundles.
-        for (_, mut pm) in self.protected_keys.drain() {
-            unlock_memory(pm.masked_data.as_ptr(), pm.masked_data.len());
-            pm.zeroize();
-        }
-        for (_, mut ek) in self.encryption_keys.drain() {
-            unlock_memory(ek.masked_data.as_ptr(), ek.masked_data.len());
-            ek.zeroize();
-        }
-        self.vaults.clear();
-        self.vault_bundles.clear();
-        self.lockout_trackers.clear();
-
-        // Remove EVERY remaining file/dir in the data directory so nothing is
-        // left to recover or point at what was here (thumbnail cache, license,
-        // temp downloads, the .remotewipe config, any leftover bundle).
-        if let Ok(entries) = fs::read_dir(&self.vaults_dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.is_dir() {
-                    shred_dir_best_effort(&path);
-                } else {
-                    shred_file_best_effort(&path);
-                }
-            }
-        }
-        destroyed
     }
 
     /// Get lockout status for a vault (before attempting unlock).

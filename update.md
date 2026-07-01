@@ -3,26 +3,6 @@
 ---
 
 * **Date:** 07/01/2026
-* **Updated at:** 2:00 PM (L.A. time)
-* **Version:** 0.3.0
-
-### TL;DR
-New feature: a remote "panic wipe." Text a secret phrase to your own Telegram bot from anywhere, and your PC destroys every vault and restarts itself. Works on any network, and catches the message even if the PC was off when you sent it.
-
-### Bug
-* No way to wipe the vault remotely if your PC was taken or you were away from it.
-
-### Fixes / New
-* **Panic Remote Wipe (new):** Set it up in Settings → Tools → "🧨 Panic Remote Wipe."
-  * You make a free Telegram bot (steps are in the app), paste its token, and pick a trigger phrase.
-  * Send that phrase to the bot from your phone — on the same Wi-Fi or from cellular, anywhere — and the PC wipes all vaults, scrubs free space, and restarts.
-  * If the PC was **off** when you sent it, the message waits; the wipe fires the moment the PC turns on and you log in.
-  * You choose what happens: wipe + scrub + restart (default), wipe + restart, wipe + shut down, or wipe only.
-* **Honest limit (please read):** this only works while Kawaii Vault is running (on or after login). It **cannot** wipe a PC that is powered off and kept offline, or one that someone boots from a USB stick or by pulling the drive. Against a stolen, powered-off machine, your real protection is the vault's encryption — a thief just sees scrambled data. Think of remote wipe as a "burn it now" button for when the PC is still yours and online.
-
----
-
-* **Date:** 07/01/2026
 * **Updated at:** 1:30 PM (L.A. time)
 * **Version:** 0.2.0
 

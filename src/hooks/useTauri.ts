@@ -18,15 +18,6 @@ export interface SecurityConfig {
   clipboard_clear_secs: number;
 }
 
-export interface RemoteWipeConfig {
-  enabled: boolean;
-  channel: string;
-  bot_token: string;
-  trigger_phrase: string;
-  action: string;
-  autostart: boolean;
-}
-
 // Wrapper around Tauri invoke calls with fallback for browser dev
 async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   try {
@@ -124,12 +115,6 @@ export function useTauri() {
 
     // File content decryption
     getFileContent: (fileId: string) => call<[string, string]>("get_file_content", { fileId }),
-
-    // ── Panic remote wipe ──
-    getRemoteWipeConfig: () => call<RemoteWipeConfig>("get_remote_wipe_config"),
-    setRemoteWipeConfig: (cfg: { enabled: boolean; botToken: string; triggerPhrase: string; action: string; autostart: boolean }) =>
-      call<void>("set_remote_wipe_config", cfg),
-    testRemoteWipeChannel: (botToken: string) => call<string>("test_remote_wipe_channel", { botToken }),
 
     // Vault-derived key (hex) for encrypting the IndexedDB thumbnail cache
     getCacheKey: () => call<string>("get_cache_key"),

@@ -1,7 +1,6 @@
 mod vault;
 mod phone_server;
 mod hls;
-mod remote_wipe;
 
 use vault::{AuditEntry, BackupResult, FileStreamInfo, LicenseStatus, LockoutStatus, RestoreResult, SecurityConfig, VaultFile, VaultInfo, VaultManager, VaultSizeInfo, encrypted_bundle_size, decrypt_file_data, read_decrypted_range, is_watchable_media};
 use std::sync::Mutex;
@@ -640,38 +639,6 @@ async fn get_cache_key(app: tauri::AppHandle) -> Result<String, String> {
     // KEK-derived key (one-way) for encrypting the UI's IndexedDB thumbnail
     // cache. Only available while a vault is unlocked.
     with_vm(app, |vm| vm.get_cache_key()).await
-}
-
-#[tauri::command]
-async fn get_remote_wipe_config() -> Result<remote_wipe::RemoteWipeConfig, String> {
-    Ok(remote_wipe::load_config())
-}
-
-#[tauri::command]
-async fn set_remote_wipe_config(
-    enabled: bool,
-    bot_token: String,
-    trigger_phrase: String,
-    action: String,
-    autostart: bool,
-) -> Result<(), String> {
-    let cfg = remote_wipe::RemoteWipeConfig {
-        enabled,
-        channel: "telegram".to_string(),
-        bot_token,
-        trigger_phrase,
-        action,
-        autostart,
-    };
-    remote_wipe::save_config(&cfg)?;
-    // Autostart only matters when the feature is on.
-    remote_wipe::set_autostart(enabled && autostart)?;
-    Ok(())
-}
-
-#[tauri::command]
-async fn test_remote_wipe_channel(bot_token: String) -> Result<String, String> {
-    remote_wipe::verify_token(&bot_token).await
 }
 
 #[tauri::command]
@@ -1722,11 +1689,6 @@ pub fn run() {
             // vault is unlocked and a watch folder is configured).
             start_watch_thread(app.handle().clone());
 
-            // Panic remote-wipe poller: watches the configured Telegram bot for the
-            // trigger phrase and wipes+restarts if seen. Runs regardless of unlock
-            // state (a queued trigger fires on the first poll after boot).
-            remote_wipe::start_poller(app.handle().clone());
-
             // Backend watchdog auto-lock: a frontend that is frozen, killed, or
             // detached can no longer poll check_auto_lock, which used to leave a
             // seized-while-unlocked vault open indefinitely. This thread enforces
@@ -1962,9 +1924,6 @@ pub fn run() {
             validate_license,
             revalidate_license,
             deactivate_license,
-            get_remote_wipe_config,
-            set_remote_wipe_config,
-            test_remote_wipe_channel,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
